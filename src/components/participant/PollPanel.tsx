@@ -3,75 +3,117 @@
 import { motion } from "framer-motion";
 import type { PollResultData } from "@/hooks/usePoll";
 import { getPollOption } from "@/config/pollOptions";
+import styles from "./participant.module.css";
 
 type Props = {
   poll: PollResultData;
   selectedTheme: string | null;
 };
 
-const ACCENTS = [
-  "from-sky-400 to-blue-500",
-  "from-emerald-400 to-green-500",
-  "from-amber-400 to-orange-500",
-  "from-fuchsia-400 to-purple-500",
+const OPTION_COLORS = [
+  "bg-[#b9e4ff]",
+  "bg-[#c8f4d2]",
+  "bg-[#ffe090]",
+  "bg-[#e2d2ff]",
 ];
 
-/** 参加者用テーマ投票画面 */
 export function PollPanel({ poll, selectedTheme }: Props) {
   const winner = getPollOption(selectedTheme);
   const closed = poll.status === "closed";
 
   return (
-    <div className="flex flex-col gap-3 rounded-3xl bg-white/95 p-4 shadow-lg">
-      <h2 className="text-center text-lg font-black text-slate-800">
-        {closed
-          ? winner
-            ? "🏆 テーマが決まりました！"
-            : "投票は締め切られました"
-          : "🗳️ どの話を一番聞きたい？"}
-      </h2>
+    <section
+      className={`${styles.contentCard} flex flex-col gap-3 p-4`}
+      aria-labelledby="poll-title"
+    >
+      <div className="flex items-end justify-between gap-3">
+        <div>
+          <span className={`${styles.sectionLabel} text-[9px] font-black`}>VOTE</span>
+          <h2 id="poll-title" className="mt-2 text-xl font-black tracking-tight">
+            {closed
+              ? winner
+                ? "次のトークが決まりました"
+                : "投票を締め切りました"
+              : "どの話をいちばん聞きたい？"}
+          </h2>
+        </div>
+        <span className="shrink-0 text-[10px] font-black text-slate-400">
+          {closed ? `${poll.totalVotes}票` : "1人1票"}
+        </span>
+      </div>
 
       {closed && winner && (
         <motion.div
           initial={{ scale: 0.9, opacity: 0 }}
           animate={{ scale: 1, opacity: 1 }}
-          className="rounded-2xl bg-gradient-to-r from-yellow-300 to-amber-400 p-4 text-center"
+          className={`${styles.softCard} relative overflow-hidden p-4`}
         >
-          <p className="text-xs font-bold text-amber-800">選ばれたテーマ</p>
-          <p className="mt-1 text-lg font-black text-amber-950">{winner.label}</p>
+          <span
+            className="absolute -right-3 -top-7 text-7xl font-black text-white/60"
+            aria-hidden="true"
+          >
+            ✓
+          </span>
+          <p className="relative text-[9px] font-black tracking-[0.16em] text-[var(--accent)]">
+            SELECTED TOPIC
+          </p>
+          <p className="relative mt-1 pr-8 text-base font-black leading-snug">
+            {winner.label}
+          </p>
         </motion.div>
       )}
 
-      <div className="flex flex-col gap-2.5">
-        {poll.tallies.map((t, i) => {
+      <div className="flex flex-col gap-2" role="radiogroup" aria-label="トークテーマ">
+        {poll.tallies.map((t, index) => {
           const isMyVote = poll.myVote === t.id;
+          const percentage =
+            poll.totalVotes > 0
+              ? Math.round((t.votes / poll.totalVotes) * 100)
+              : 0;
+
           return (
             <motion.button
               key={t.id}
-              whileTap={closed ? undefined : { scale: 0.97 }}
+              type="button"
+              whileTap={closed ? undefined : { scale: 0.98 }}
               onClick={() => poll.vote(t.id)}
               disabled={closed}
-              className={`relative overflow-hidden rounded-2xl border-2 p-4 text-left transition-colors ${
+              role="radio"
+              aria-checked={isMyVote}
+              className={`relative min-h-[70px] overflow-hidden rounded-[14px_14px_5px_14px] border-2 p-3 text-left transition ${
                 isMyVote
-                  ? "border-fuchsia-500 bg-fuchsia-50"
-                  : "border-slate-200 bg-white"
-              } ${closed ? "opacity-80" : "active:bg-slate-50"}`}
+                  ? "border-[var(--accent)] bg-[var(--accent-soft)] shadow-[3px_3px_0_var(--ink)]"
+                  : "border-[var(--ink)] bg-[#fffdf7]"
+              } ${closed ? "cursor-default" : "hover:-translate-y-0.5 active:translate-y-0"}`}
             >
+              {closed && (
+                <span
+                  className="absolute inset-y-0 left-0 bg-[var(--accent-soft)] transition-[width]"
+                  style={{ width: `${percentage}%` }}
+                  aria-hidden="true"
+                />
+              )}
               <div className="relative flex items-center gap-3">
                 <span
-                  className={`flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-gradient-to-br ${
-                    ACCENTS[i % ACCENTS.length]
-                  } text-base font-black text-white`}
+                  className={`flex h-10 w-10 shrink-0 items-center justify-center rounded-[10px_10px_3px_10px] border-2 border-[var(--ink)] ${
+                    OPTION_COLORS[index % OPTION_COLORS.length]
+                  } text-sm font-black`}
                 >
-                  {i + 1}
+                  0{index + 1}
                 </span>
-                <span className="flex-1 font-bold leading-tight text-slate-800">
+                <span className="flex-1 text-sm font-black leading-snug">
                   {t.label}
                 </span>
-                {isMyVote && (
-                  <span className="shrink-0 rounded-full bg-fuchsia-500 px-2 py-0.5 text-[11px] font-black text-white">
-                    ✓ 投票中
+                {isMyVote ? (
+                  <span className="shrink-0 rounded-full bg-[var(--accent)] px-2 py-1 text-[9px] font-black text-white">
+                    選択中
                   </span>
+                ) : (
+                  closed && (
+                    <span className="shrink-0 text-xs font-black">
+                      {percentage}%
+                    </span>
+                  )
                 )}
               </div>
             </motion.button>
@@ -79,13 +121,13 @@ export function PollPanel({ poll, selectedTheme }: Props) {
         })}
       </div>
 
-      <p className="text-center text-xs font-medium text-slate-400">
+      <p className="text-center text-[10px] font-black text-slate-400">
         {closed
-          ? "投票ありがとうございました！"
+          ? "投票ありがとうございました"
           : poll.myVote
-            ? "タップで変更できるよ"
-            : "1人1票・気軽にタップ！"}
+            ? "締め切りまでは何度でも変更できます"
+            : "選んだテーマをタップしてください"}
       </p>
-    </div>
+    </section>
   );
 }

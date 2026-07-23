@@ -16,45 +16,51 @@ import { CommentForm } from "@/components/participant/CommentForm";
 import { PollPanel } from "@/components/participant/PollPanel";
 import { QuestionForm } from "@/components/participant/QuestionForm";
 import { WaitingScreen } from "@/components/participant/WaitingScreen";
+import styles from "@/components/participant/participant.module.css";
 
 type PhaseUI = {
-  badge: string;
-  emoji: string;
+  number: string;
+  kicker: string;
+  title: string;
   hint: string;
-  bg: string;
+  mark: string;
 };
 
-// モードごとの「今なにをする時間か」を示す表示
 const PHASE: Record<SessionMode, PhaseUI> = {
   reaction: {
-    badge: "リアクションタイム",
-    emoji: "🙌",
-    hint: "ボタンを押して盛り上げよう！",
-    bg: "from-indigo-600 via-purple-600 to-fuchsia-600",
+    number: "01",
+    kicker: "REACT",
+    title: "その場で、反応しよう。",
+    hint: "感じた瞬間にボタンをタップ",
+    mark: "!",
   },
   talk: {
-    badge: "座談会トーク中",
-    emoji: "💬",
-    hint: "感想やリアクションを送ってみよう！",
-    bg: "from-sky-600 via-indigo-600 to-purple-600",
+    number: "02",
+    kicker: "LIVE TALK",
+    title: "感じたことを、そのまま。",
+    hint: "リアクションやひとことをスクリーンへ",
+    mark: "▶",
   },
   poll: {
-    badge: "投票タイム",
-    emoji: "🗳️",
-    hint: "聞きたいテーマに投票してね！",
-    bg: "from-rose-500 via-pink-600 to-fuchsia-600",
+    number: "03",
+    kicker: "YOUR CHOICE",
+    title: "次の話題を、みんなで決める。",
+    hint: "いちばん聞きたいテーマを1つ選ぼう",
+    mark: "✓",
   },
   question: {
-    badge: "質問タイム",
-    emoji: "🙋",
-    hint: "聞きたいことを送ってみよう！",
-    bg: "from-emerald-500 via-teal-600 to-sky-600",
+    number: "04",
+    kicker: "ASK US",
+    title: "気になること、聞いてみよう。",
+    hint: "名前は出ないので、気軽にどうぞ",
+    mark: "?",
   },
   ending: {
-    badge: "エンディング",
-    emoji: "🎉",
-    hint: "参加してくれてありがとう！",
-    bg: "from-amber-500 via-orange-500 to-rose-500",
+    number: "05",
+    kicker: "THANK YOU",
+    title: "ここから、キャンパスへ。",
+    hint: "参加してくれてありがとうございました",
+    mark: "＋",
   },
 };
 
@@ -102,30 +108,35 @@ export default function JoinPage() {
 
       case "question":
         return (
-          <div className="flex flex-col gap-4">
+          <div className="flex flex-col gap-3">
             <QuestionForm onSend={sendQuestion} />
             {state.reactionsEnabled && (
-              <ReactionPanel onSend={sendReaction} title="リアクションも送れるよ" />
+              <ReactionPanel onSend={sendReaction} title="聞きながら反応する" compact />
             )}
           </div>
         );
 
       case "ending":
         return (
-          <div className="flex flex-col gap-4">
-            <div className="rounded-3xl bg-white/95 p-5 text-center shadow-lg">
-              <p className="text-2xl">🎉🎓🎉</p>
-              <p className="mt-2 text-lg font-black text-slate-800">
+          <div className="flex flex-col gap-3">
+            <div className={`${styles.contentCard} relative overflow-hidden p-5`}>
+              <span className="absolute -right-3 -top-5 text-[72px] font-black leading-none text-[var(--accent-soft)]">
+                FIT
+              </span>
+              <p className={`${styles.sectionLabel} relative text-[10px] font-black`}>
+                SESSION COMPLETE
+              </p>
+              <p className="relative mt-4 text-2xl font-black tracking-tight">
                 ご参加ありがとう！
               </p>
-              <p className="mt-1 text-sm text-slate-500">
+              <p className="relative mt-2 max-w-[18rem] text-sm font-bold leading-relaxed text-slate-600">
                 気になることは、近くのスタッフや登壇者に気軽に聞いてね
               </p>
             </div>
             <ReactionPanel
               onSend={sendReaction}
               disabled={!state.reactionsEnabled}
-              title="最後にもう一度リアクション！"
+              title="最後にひとつ、感想をタップ"
             />
             <CommentForm onSend={sendComment} disabled={!state.commentsEnabled} />
           </div>
@@ -135,13 +146,18 @@ export default function JoinPage() {
       case "reaction":
       default:
         return (
-          <div className="flex flex-col gap-4">
+          <div className="flex flex-col gap-3">
             {themeLabel && (
-              <div className="rounded-2xl bg-white/95 px-4 py-3 text-center shadow-md">
-                <p className="text-[11px] font-bold tracking-wide text-fuchsia-600">
-                  🎤 いま話しているテーマ
-                </p>
-                <p className="mt-0.5 font-bold text-slate-800">{themeLabel}</p>
+              <div className={`${styles.softCard} flex items-start gap-3 p-3.5`}>
+                <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-[var(--ink)] text-sm font-black text-white">
+                  NOW
+                </span>
+                <div>
+                  <p className="text-[10px] font-black tracking-[0.14em] text-[var(--accent)]">
+                    いま話しているテーマ
+                  </p>
+                  <p className="mt-1 text-sm font-black leading-snug">{themeLabel}</p>
+                </div>
               </div>
             )}
             <ReactionPanel
@@ -156,56 +172,71 @@ export default function JoinPage() {
 
   return (
     <main
-      className={`relative min-h-screen w-full bg-gradient-to-b ${phase.bg} transition-colors duration-700`}
+      className={styles.shell}
+      data-phase={state.mode}
     >
-      <div className="mx-auto flex min-h-screen w-full max-w-md flex-col">
-        {/* ヘッダー */}
-        <header className="flex items-center justify-between px-4 pt-4">
-          <div className="flex items-center gap-1.5 text-white">
-            <span className="text-sm font-black leading-tight">
-              福工大 学生トークセッション
+      <div className={`${styles.canvas} mx-auto flex min-h-[100dvh] w-full max-w-[520px] flex-col`}>
+        <header className="flex items-center justify-between gap-3 px-4 pb-3 pt-6">
+          <div className="flex min-w-0 items-center gap-2.5">
+            <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-[10px_10px_3px_10px] bg-[var(--ink)] text-xs font-black tracking-tight text-white">
+              FIT
             </span>
+            <div className="min-w-0">
+              <p className="truncate text-[10px] font-black tracking-[0.12em] text-slate-500">
+                OPEN CAMPUS 2026
+              </p>
+              <p className="truncate text-sm font-black leading-tight">学生トークセッション</p>
+            </div>
           </div>
-          <div className="flex items-center gap-1.5 rounded-full bg-black/20 px-2.5 py-1 text-[11px] font-bold text-white">
+          <div
+            className="flex shrink-0 items-center gap-1.5 rounded-full border-2 border-[var(--ink)] bg-white px-2.5 py-1.5 text-[10px] font-black"
+            aria-live="polite"
+          >
             <span
               className={`inline-block h-2 w-2 rounded-full ${
-                connected ? "bg-green-300" : "bg-red-300 animate-pulse"
+                connected ? "bg-[#65d36e]" : "animate-pulse bg-[#ff5c35]"
               }`}
             />
-            {connected ? `${connectionCount}人が参加中` : "接続中…"}
+            {connected ? `${connectionCount}人 LIVE` : "接続中"}
           </div>
         </header>
 
-        {/* フェーズバナー：今なにをする時間かを大きく示す */}
         {ready && (
-          <div className="px-4 pt-3">
+          <div className="px-4 pb-3">
             <AnimatePresence mode="wait">
               <motion.div
                 key={state.mode}
-                initial={{ opacity: 0, scale: 0.92, y: 8 }}
-                animate={{ opacity: 1, scale: 1, y: 0 }}
-                exit={{ opacity: 0, scale: 0.96 }}
-                transition={{ duration: 0.25 }}
-                className="flex items-center gap-3 rounded-3xl bg-white/15 px-4 py-3 backdrop-blur-sm"
+                initial={{ opacity: 0, y: 10 }}
+                animate={{ opacity: 1, y: 0 }}
+                exit={{ opacity: 0, y: -8 }}
+                transition={{ duration: 0.22 }}
+                className={`${styles.phaseCard} min-h-[136px] p-4 text-white`}
               >
-                <motion.span
-                  animate={{ rotate: [0, -8, 8, 0] }}
-                  transition={{ repeat: Infinity, duration: 2.5, ease: "easeInOut" }}
-                  className="text-4xl"
-                >
-                  {phase.emoji}
-                </motion.span>
-                <div className="text-white">
-                  <p className="text-lg font-black leading-tight">{phase.badge}</p>
-                  <p className="text-xs font-medium text-white/80">{phase.hint}</p>
+                <div className="relative z-10 flex h-full items-start justify-between gap-3">
+                  <div className="min-w-0">
+                    <p className="text-[10px] font-black tracking-[0.2em] text-white/75">
+                      {phase.number} / {phase.kicker}
+                    </p>
+                    <h1 className="mt-3 max-w-[17rem] text-[26px] font-black leading-[1.12] tracking-[-0.04em]">
+                      {phase.title}
+                    </h1>
+                    <p className="mt-2 text-xs font-bold text-white/85">{phase.hint}</p>
+                  </div>
+                  <motion.span
+                    animate={{ rotate: [2, -2, 2] }}
+                    transition={{ repeat: Infinity, duration: 2.8, ease: "easeInOut" }}
+                    className={`${styles.phaseStamp} flex h-14 w-14 shrink-0 items-center justify-center rounded-[16px_16px_5px_16px] text-3xl font-black text-[var(--ink)]`}
+                    aria-hidden="true"
+                  >
+                    {phase.mark}
+                  </motion.span>
                 </div>
               </motion.div>
             </AnimatePresence>
           </div>
         )}
 
-        {/* 本体：モードに応じて自動切り替え */}
-        <div className="flex-1 px-4 py-4">
+        <div className="flex-1 px-4 pb-4">
           <AnimatePresence mode="wait">
             <motion.div
               key={`${state.sessionActive}-${state.mode}`}
@@ -219,8 +250,11 @@ export default function JoinPage() {
           </AnimatePresence>
         </div>
 
-        <footer className="px-4 pb-4 text-center text-[11px] font-medium text-white/70">
-          匿名で参加中・コメントやリアクションはスクリーンに映るよ
+        <footer className={`${styles.privacyStrip} mt-auto flex items-center justify-center gap-2 px-4 py-3 text-[10px] font-bold text-slate-600`}>
+          <span className="flex h-5 w-5 items-center justify-center rounded-full bg-[var(--ink)] text-[10px] text-white">
+            i
+          </span>
+          匿名で参加中／投稿は会場スクリーンに表示されます
         </footer>
       </div>
     </main>

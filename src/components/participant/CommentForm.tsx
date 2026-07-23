@@ -3,13 +3,13 @@
 import { useState, type FormEvent } from "react";
 import { COMMENT_MAX_LENGTH } from "@/lib/moderation";
 import type { SendResult } from "@/hooks/useComments";
+import styles from "./participant.module.css";
 
 type Props = {
   onSend: (text: string) => Promise<SendResult>;
   disabled?: boolean;
 };
 
-/** 参加者用コメント入力フォーム */
 export function CommentForm({ onSend, disabled = false }: Props) {
   const [text, setText] = useState("");
   const [error, setError] = useState<string | null>(null);
@@ -33,13 +33,23 @@ export function CommentForm({ onSend, disabled = false }: Props) {
   };
 
   return (
-    <div className="rounded-3xl bg-white/95 p-4 shadow-lg">
-      <p className="mb-2 text-center text-sm font-black text-slate-700">
-        {disabled ? "コメント受付は停止中です" : "💬 コメントを画面に流そう"}
-      </p>
-      <form onSubmit={handleSubmit} className="flex flex-col gap-1">
+    <section className={`${styles.contentCard} p-4`} aria-labelledby="comment-title">
+      <div className="mb-3 flex items-end justify-between gap-3">
+        <div>
+          <span className={`${styles.sectionLabel} text-[9px] font-black`}>COMMENT</span>
+          <h2 id="comment-title" className="mt-2 text-lg font-black tracking-tight">
+            {disabled ? "コメント受付は停止中です" : "ひとこと、スクリーンへ。"}
+          </h2>
+        </div>
+        <span className="shrink-0 text-[10px] font-black text-slate-400">匿名</span>
+      </div>
+      <form onSubmit={handleSubmit} className="flex flex-col gap-2">
+        <label htmlFor="participant-comment" className="sr-only">
+          コメント
+        </label>
         <div className="flex gap-2">
           <input
+            id="participant-comment"
             type="text"
             value={text}
             onChange={(e) => {
@@ -47,25 +57,26 @@ export function CommentForm({ onSend, disabled = false }: Props) {
               setError(null);
             }}
             maxLength={COMMENT_MAX_LENGTH}
-            placeholder={disabled ? "いまは送れません" : "例：おもしろい！"}
+            placeholder={disabled ? "いまは送れません" : "例：その話、もっと聞きたい！"}
             disabled={disabled}
-            className="min-w-0 flex-1 rounded-full border-2 border-slate-200 bg-white px-4 py-3 text-base outline-none focus:border-fuchsia-400 disabled:bg-slate-100"
+            aria-describedby="comment-meta"
+            className={`${styles.field} min-h-12 min-w-0 flex-1 rounded-[12px_12px_4px_12px] px-3.5 py-2.5 text-base disabled:bg-stone-200`}
           />
           <button
             type="submit"
             disabled={disabled || sending || text.trim().length === 0}
-            className="shrink-0 rounded-full bg-gradient-to-b from-fuchsia-500 to-purple-600 px-5 py-3 font-bold text-white shadow-md active:scale-95 disabled:opacity-40"
+            className={`${styles.accentButton} min-h-12 shrink-0 rounded-[12px_12px_4px_12px] px-4 text-sm font-black transition disabled:opacity-60`}
           >
-            {justSent ? "✓" : "送信"}
+            {sending ? "送信中" : justSent ? "送信済" : "送る"}
           </button>
         </div>
-        <div className="flex justify-between px-2 text-xs">
-          <span className="font-bold text-red-500">{error ?? ""}</span>
-          <span className="text-slate-400">
+        <div id="comment-meta" className="flex min-h-4 justify-between px-1 text-[10px]">
+          <span className="font-black text-red-600" role="alert">{error ?? ""}</span>
+          <span className="font-bold text-slate-400">
             {text.length}/{COMMENT_MAX_LENGTH}
           </span>
         </div>
       </form>
-    </div>
+    </section>
   );
 }

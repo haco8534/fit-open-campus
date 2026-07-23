@@ -1,0 +1,54 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1920" height="1080" viewBox="0 0 1920 1080">
+  <rect width="1920" height="1080" fill="#ffffff"/>
+  <circle cx="1830" cy="-20" r="220" fill="none" stroke="#cf9a6b" stroke-opacity=".14" stroke-width="52"/>
+
+  <g font-family="'Yu Gothic', 'Noto Sans CJK JP', Meiryo, sans-serif">
+    <text x="86" y="92" fill="#cf9a6b" font-size="25" font-weight="800" letter-spacing="5">TALK SESSION / LIVE VOTE</text>
+    <text x="82" y="186" fill="#000000" font-size="72" font-weight="900" letter-spacing="-3">次に話すテーマを、</text>
+    <text x="82" y="272" fill="#000000" font-size="72" font-weight="900" letter-spacing="-3">みんなで決めよう</text>
+    <rect x="82" y="294" width="650" height="14" fill="#cf9a6b"/>
+
+    <g transform="translate(1350 78)">
+      <rect width="480" height="168" fill="#f2e5d8" stroke="#000000" stroke-width="4"/>
+      <text x="34" y="54" fill="#000000" font-size="24" font-weight="900" letter-spacing="2">VOTE FROM YOUR PHONE</text>
+      <text x="34" y="101" fill="#000000" font-size="31" font-weight="900">スマホから1つ選んで</text>
+      <text x="34" y="141" fill="#000000" font-size="31" font-weight="900">投票してください</text>
+    </g>
+
+    <line x1="82" y1="352" x2="1838" y2="352" stroke="#000000" stroke-width="5"/>
+
+    <g transform="translate(82 404)">
+      <text x="0" y="72" fill="#cf9a6b" font-size="72" font-weight="900">01</text>
+      <text x="116" y="46" fill="#000000" font-size="39" font-weight="900">生成AI時代に技術を学ぶ</text>
+      <text x="116" y="98" fill="#000000" font-size="39" font-weight="900">意味はあるのか</text>
+      <line x1="0" y1="144" x2="820" y2="144" stroke="#cf9a6b" stroke-width="3"/>
+    </g>
+
+    <g transform="translate(1000 404)">
+      <text x="0" y="72" fill="#cf9a6b" font-size="72" font-weight="900">02</text>
+      <text x="116" y="46" fill="#000000" font-size="39" font-weight="900">福工大に入って何が</text>
+      <text x="116" y="98" fill="#000000" font-size="39" font-weight="900">できるようになったか</text>
+      <line x1="0" y1="144" x2="838" y2="144" stroke="#cf9a6b" stroke-width="3"/>
+    </g>
+
+    <g transform="translate(82 645)">
+      <text x="0" y="72" fill="#cf9a6b" font-size="72" font-weight="900">03</text>
+      <text x="116" y="46" fill="#000000" font-size="39" font-weight="900">技術に詳しくなくても</text>
+      <text x="116" y="98" fill="#000000" font-size="39" font-weight="900">ついていけるか</text>
+      <line x1="0" y1="144" x2="820" y2="144" stroke="#cf9a6b" stroke-width="3"/>
+    </g>
+
+    <g transform="translate(1000 645)">
+      <text x="0" y="72" fill="#cf9a6b" font-size="72" font-weight="900">04</text>
+      <text x="116" y="46" fill="#000000" font-size="39" font-weight="900">大学で成長している人の</text>
+      <text x="116" y="98" fill="#000000" font-size="39" font-weight="900">共通点</text>
+      <line x1="0" y1="144" x2="838" y2="144" stroke="#cf9a6b" stroke-width="3"/>
+    </g>
+
+    <rect x="0" y="925" width="1920" height="155" fill="#cf9a6b"/>
+    <text x="82" y="1017" fill="#ffffff" font-size="53" font-weight="900" letter-spacing="2">VOTE NOW</text>
+    <text x="560" y="1009" fill="#ffffff" font-size="30" font-weight="800">この画面が出たら、参加者画面をチェック</text>
+    <text x="1540" y="1017" fill="#ffffff" font-size="61" font-weight="900" letter-spacing="-1">FIT</text>
+    <text x="1660" y="1009" fill="#ffffff" font-size="26" font-weight="800">福岡工業大学</text>
+  </g>
+</svg>

@@ -1,6 +1,6 @@
 "use client";
 
-import { motion, AnimatePresence } from "framer-motion";
+import { AnimatePresence, motion } from "framer-motion";
 import type { PollResultData } from "@/hooks/usePoll";
 import { getPollOption } from "@/config/pollOptions";
 
@@ -9,25 +9,18 @@ type Props = {
   selectedTheme: string | null;
 };
 
-// テーマごとの配色（遠くからでも見分けやすいように4色に分ける）
-const ACCENTS = [
-  { bar: "from-sky-400 to-blue-600", ring: "#38bdf8", glow: "rgba(56,189,248,0.55)" },
-  { bar: "from-emerald-400 to-green-600", ring: "#34d399", glow: "rgba(52,211,153,0.55)" },
-  { bar: "from-amber-400 to-orange-600", ring: "#fbbf24", glow: "rgba(251,191,36,0.55)" },
-  { bar: "from-fuchsia-400 to-purple-600", ring: "#e879f9", glow: "rgba(232,121,249,0.55)" },
-];
+const PAPER_COLORS = ["#f4eadf", "#ffffff", "#f8f2eb", "#ffffff"];
 
-/** 票が増えるたびにポップするカウンター */
 function AnimatedCount({ value }: { value: number }) {
   return (
     <span className="relative inline-block tabular-nums">
       <AnimatePresence mode="popLayout">
         <motion.span
           key={value}
-          initial={{ scale: 1.9, y: "-8%", color: "#fde047" }}
-          animate={{ scale: 1, y: "0%", color: "#ffffff" }}
+          initial={{ scale: 1.35, y: "-8%", color: "#ff3838" }}
+          animate={{ scale: 1, y: "0%", color: "#111111" }}
           exit={{ opacity: 0, position: "absolute" }}
-          transition={{ type: "spring", stiffness: 320, damping: 16 }}
+          transition={{ type: "spring", stiffness: 320, damping: 18 }}
           className="inline-block"
         >
           {value}
@@ -37,153 +30,127 @@ function AnimatedCount({ value }: { value: number }) {
   );
 }
 
-/** メインモニターの投票画面（スライド7）。画像の代わりに全面描画する */
 export function PollBoard({ poll, selectedTheme }: Props) {
   const closed = poll.status === "closed";
   const winner = getPollOption(selectedTheme);
 
   return (
-    <div className="absolute inset-0 overflow-hidden bg-[radial-gradient(circle_at_20%_0%,#1e3a8a_0%,#0b1220_55%,#050810_100%)]">
-      {/* 背景の淡い光 */}
-      <div className="pointer-events-none absolute -left-[10%] top-[10%] h-[40vw] w-[40vw] rounded-full bg-sky-500/10 blur-3xl" />
-      <div className="pointer-events-none absolute -right-[10%] bottom-[0%] h-[40vw] w-[40vw] rounded-full bg-fuchsia-500/10 blur-3xl" />
+    <div className="absolute inset-0 overflow-hidden bg-white text-black">
+      <div className="absolute inset-x-0 bottom-0 h-[13%] bg-[#cf9a6b]" />
+      <div className="absolute right-[-3%] top-[-10%] h-[19vw] w-[19vw] rounded-full border-[2.2vw] border-[#cf9a6b]/15" />
 
-      <div className="relative flex h-full flex-col px-[4%] py-[3.5%]">
-        {/* ヘッダー */}
-        <div className="mb-[2.2%] flex items-end justify-between">
+      <div className="relative flex h-full flex-col px-[4.2%] pb-[14.5%] pt-[3.2%]">
+        <header className="mb-[2%] flex items-end justify-between border-b-[0.28vw] border-black pb-[1.4%]">
           <div>
             <p
-              className="font-bold tracking-wide text-sky-300"
-              style={{ fontSize: "1.5vw" }}
+              className="font-black tracking-[0.16em] text-[#cf9a6b]"
+              style={{ fontSize: "1.2vw" }}
             >
-              📣 スマホから投票してね！
+              TALK SESSION / LIVE VOTE
             </p>
             <h1
-              className="font-black text-white"
-              style={{ fontSize: "3.4vw", lineHeight: 1.1 }}
+              className="font-black tracking-[-0.04em]"
+              style={{ fontSize: "3.45vw", lineHeight: 1.05 }}
             >
-              どの話を一番聞きたい？
+              次に話すテーマを、みんなで決めよう
             </h1>
           </div>
-          <div className="text-right">
+          <div className="flex items-center gap-[1vw] pb-[0.2vw]">
             <div
-              className={`inline-block rounded-full px-[1.4vw] py-[0.4vw] font-bold ${
-                closed
-                  ? "bg-white/10 text-white/70"
-                  : "bg-red-500 text-white"
+              className={`border-[0.16vw] border-black px-[1vw] py-[0.42vw] font-black ${
+                closed ? "bg-white" : "bg-[#ff3838] text-white"
               }`}
-              style={{ fontSize: "1.3vw" }}
+              style={{ fontSize: "1.05vw" }}
             >
-              {closed ? "受付終了" : "🔴 投票受付中"}
+              {closed ? "投票終了" : "投票受付中"}
             </div>
-            <p className="mt-[0.4vw] font-bold text-white" style={{ fontSize: "1.6vw" }}>
-              合計 {poll.totalVotes} 票
+            <p className="font-black" style={{ fontSize: "1.3vw" }}>
+              TOTAL&nbsp; {poll.totalVotes}
             </p>
           </div>
-        </div>
+        </header>
 
-        {/* テーマカード 2x2 */}
-        <div className="grid flex-1 grid-cols-2 grid-rows-2 gap-[1.6%]">
-          {poll.tallies.map((t, i) => {
-            const accent = ACCENTS[i % ACCENTS.length];
+        <div className="grid min-h-0 flex-1 grid-cols-2 grid-rows-2 gap-[1.2vw]">
+          {poll.tallies.map((t, index) => {
             const isLeader = poll.leaderId === t.id && poll.totalVotes > 0;
             const isWinner = closed && selectedTheme === t.id;
             const dimmed = closed && winner && !isWinner;
             const share = poll.totalVotes > 0 ? t.votes / poll.totalVotes : 0;
 
             return (
-              <motion.div
+              <motion.article
                 key={t.id}
                 animate={{
-                  opacity: dimmed ? 0.4 : 1,
-                  scale: isWinner ? 1.03 : 1,
+                  opacity: dimmed ? 0.42 : 1,
+                  y: isWinner ? "-0.35vw" : 0,
                 }}
-                transition={{ type: "spring", stiffness: 200, damping: 22 }}
-                className="relative flex flex-col justify-between overflow-hidden rounded-[1.4vw] border-2 p-[2%]"
+                transition={{ type: "spring", stiffness: 220, damping: 24 }}
+                className="relative flex min-h-0 flex-col justify-between overflow-hidden border-[0.18vw] border-black px-[1.5vw] py-[1.25vw]"
                 style={{
-                  borderColor:
-                    isWinner || isLeader ? accent.ring : "rgba(255,255,255,0.12)",
-                  background: "rgba(255,255,255,0.05)",
+                  backgroundColor: PAPER_COLORS[index % PAPER_COLORS.length],
                   boxShadow:
-                    isWinner || isLeader
-                      ? `0 0 3vw ${accent.glow}`
+                    isWinner || (!closed && isLeader)
+                      ? "0.5vw 0.5vw 0 #cf9a6b"
                       : "none",
                 }}
               >
-                {/* 背景バー（得票率） */}
                 <motion.div
-                  className={`absolute inset-y-0 left-0 bg-gradient-to-r ${accent.bar} opacity-25`}
+                  className="absolute inset-y-0 left-0 bg-[#cf9a6b]/18"
                   animate={{ width: `${share * 100}%` }}
                   transition={{ type: "spring", stiffness: 120, damping: 20 }}
+                  aria-hidden="true"
                 />
 
-                {/* 上段：番号 + テーマ */}
-                <div className="relative flex items-start gap-[1vw]">
+                <div className="relative flex items-start gap-[1.2vw]">
                   <span
-                    className="flex shrink-0 items-center justify-center rounded-full font-black text-white"
-                    style={{
-                      width: "3vw",
-                      height: "3vw",
-                      fontSize: "1.6vw",
-                      background: `linear-gradient(135deg, ${accent.ring}, rgba(0,0,0,0.2))`,
-                    }}
+                    className="shrink-0 font-black leading-none text-[#cf9a6b]"
+                    style={{ fontSize: "3.7vw" }}
                   >
-                    {i + 1}
+                    0{index + 1}
                   </span>
-                  <span
-                    className="font-bold text-white"
-                    style={{ fontSize: "1.9vw", lineHeight: 1.2 }}
+                  <h2
+                    className="max-w-[31vw] font-black tracking-[-0.03em]"
+                    style={{ fontSize: "1.75vw", lineHeight: 1.2 }}
                   >
                     {t.label}
-                  </span>
-                  {(isLeader || isWinner) && (
+                  </h2>
+                  {(isWinner || (!closed && isLeader)) && (
                     <span
-                      className="absolute -right-[0.5vw] -top-[0.5vw]"
-                      style={{ fontSize: "2.2vw" }}
+                      className="absolute right-0 top-0 bg-black px-[0.65vw] py-[0.25vw] font-black text-white"
+                      style={{ fontSize: "0.85vw" }}
                     >
-                      👑
+                      {isWinner ? "SELECTED" : "TOP"}
                     </span>
                   )}
                 </div>
 
-                {/* 下段：大きな票数 */}
-                <div className="relative flex items-end justify-between">
-                  <div className="flex items-baseline gap-[0.6vw]">
-                    <span
-                      className="font-black leading-none text-white"
-                      style={{ fontSize: "6vw" }}
-                    >
+                <div className="relative flex items-end justify-between border-t-[0.12vw] border-black/30 pt-[0.6vw]">
+                  <div className="flex items-baseline gap-[0.45vw]">
+                    <span className="font-black leading-none" style={{ fontSize: "4.7vw" }}>
                       <AnimatedCount value={t.votes} />
                     </span>
-                    <span
-                      className="font-bold text-white/60"
-                      style={{ fontSize: "1.6vw" }}
-                    >
-                      票
+                    <span className="font-black" style={{ fontSize: "1.15vw" }}>
+                      VOTES
                     </span>
                   </div>
-                  <span
-                    className="font-bold text-white/50"
-                    style={{ fontSize: "1.5vw" }}
-                  >
+                  <span className="font-black text-[#cf9a6b]" style={{ fontSize: "1.65vw" }}>
                     {Math.round(share * 100)}%
                   </span>
                 </div>
-              </motion.div>
+              </motion.article>
             );
           })}
         </div>
 
-        {/* 勝者バナー */}
         <AnimatePresence>
           {closed && winner && (
             <motion.div
-              initial={{ opacity: 0, y: 30 }}
+              initial={{ opacity: 0, y: 20 }}
               animate={{ opacity: 1, y: 0 }}
-              className="mt-[1.6%] rounded-[1vw] bg-gradient-to-r from-yellow-400 to-amber-500 px-[2vw] py-[1vw] text-center"
+              className="absolute bottom-[3.2%] left-[24%] right-[17%] border-[0.18vw] border-black bg-white px-[1.2vw] py-[0.65vw] text-center shadow-[0.35vw_0.35vw_0_#111]"
             >
-              <span className="font-black text-slate-900" style={{ fontSize: "2vw" }}>
-                🏆 このテーマで話します：{winner.label}
+              <span className="font-black" style={{ fontSize: "1.35vw" }}>
+                SELECTED TOPIC&nbsp;：&nbsp;{winner.label}
               </span>
             </motion.div>
           )}

@@ -3,12 +3,12 @@
 import { useState, type FormEvent } from "react";
 import { QUESTION_MAX_LENGTH } from "@/lib/moderation";
 import type { SendResult } from "@/hooks/useComments";
+import styles from "./participant.module.css";
 
 type Props = {
   onSend: (text: string) => Promise<SendResult>;
 };
 
-/** 参加者用質問投稿フォーム */
 export function QuestionForm({ onSend }: Props) {
   const [text, setText] = useState("");
   const [error, setError] = useState<string | null>(null);
@@ -32,44 +32,55 @@ export function QuestionForm({ onSend }: Props) {
   };
 
   return (
-    <div className="rounded-3xl bg-white/95 p-4 shadow-lg">
-      <form onSubmit={handleSubmit} className="flex flex-col gap-2">
-        <h2 className="text-center text-lg font-black text-slate-800">
-          🙋 質問してみよう
-        </h2>
-        <p className="text-center text-xs font-medium text-slate-500">
-          匿名で送れます。登壇者が見て答えてくれるよ
-        </p>
+    <section className={`${styles.contentCard} p-4`} aria-labelledby="question-title">
+      <form onSubmit={handleSubmit} className="flex flex-col gap-3">
+        <div>
+          <span className={`${styles.sectionLabel} text-[9px] font-black`}>QUESTION</span>
+          <h2 id="question-title" className="mt-2 text-xl font-black tracking-tight">
+            聞いてみたいことは？
+          </h2>
+          <p className="mt-1 text-xs font-bold leading-relaxed text-slate-500">
+            名前は表示されません。登壇者が会場で回答します。
+          </p>
+        </div>
+        <label htmlFor="participant-question" className="sr-only">
+          質問内容
+        </label>
         <textarea
+          id="participant-question"
           value={text}
           onChange={(e) => {
             setText(e.target.value);
             setError(null);
           }}
           maxLength={QUESTION_MAX_LENGTH}
-          rows={3}
+          rows={4}
           placeholder="例：プログラミング未経験でも大丈夫ですか？"
-          className="resize-none rounded-2xl border-2 border-slate-200 bg-white p-4 text-base outline-none focus:border-teal-400"
+          aria-describedby="question-meta"
+          className={`${styles.field} min-h-28 resize-none rounded-[14px_14px_5px_14px] p-3.5 text-base leading-relaxed`}
         />
-        <div className="flex justify-between px-2 text-xs">
-          <span className="font-bold text-red-500">{error ?? ""}</span>
-          <span className="text-slate-400">
+        <div id="question-meta" className="flex min-h-4 justify-between px-1 text-[10px]">
+          <span className="font-black text-red-600" role="alert">{error ?? ""}</span>
+          <span className="font-bold text-slate-400">
             {text.length}/{QUESTION_MAX_LENGTH}
           </span>
         </div>
         <button
           type="submit"
           disabled={sending || text.trim().length === 0}
-          className="rounded-full bg-gradient-to-b from-teal-500 to-emerald-600 py-3 font-bold text-white shadow-md active:scale-95 disabled:opacity-40"
+          className={`${styles.accentButton} min-h-12 rounded-[12px_12px_4px_12px] px-4 py-3 text-sm font-black transition disabled:opacity-60`}
         >
-          質問を送る
+          {sending ? "送信しています…" : "この質問を送る"}
         </button>
         {sent && (
-          <p className="text-center text-sm font-black text-emerald-600">
-            送信したよ！ありがとう 🎉
+          <p
+            className={`${styles.softCard} px-3 py-2.5 text-center text-sm font-black text-[var(--ink)]`}
+            role="status"
+          >
+            送信しました。回答をお楽しみに！
           </p>
         )}
       </form>
-    </div>
+    </section>
   );
 }
