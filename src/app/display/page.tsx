@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useState } from "react";
 import {
   FIRST_SLIDE_ID,
   LAST_SLIDE_ID,
@@ -16,7 +16,7 @@ import { usePoll } from "@/hooks/usePoll";
 import { SlideRenderer } from "@/components/slides/SlideRenderer";
 import { CommentLayer } from "@/components/display/CommentLayer";
 import { ReactionLayer } from "@/components/display/ReactionLayer";
-import { PollResult } from "@/components/display/PollResult";
+import { PollBoard } from "@/components/display/PollBoard";
 import { QuestionOverlay } from "@/components/display/QuestionOverlay";
 import { PersistentStatus } from "@/components/display/PersistentStatus";
 
@@ -69,10 +69,14 @@ export default function DisplayPage() {
     });
   }, []);
 
-  const joinUrl = useMemo(() => {
-    if (typeof window === "undefined") return "";
+  // QRのURLは window に依存するため、マウント後にだけ設定する
+  // （サーバー描画とクライアント初期描画を一致させ、ハイドレーション不一致を防ぐ）
+  const [joinUrl, setJoinUrl] = useState("");
+  useEffect(() => {
     const base = process.env.NEXT_PUBLIC_BASE_URL ?? window.location.origin;
-    return `${base}/join/${sessionId}`;
+    // マウント後にクライアント専用の値を入れる（ハイドレーション不一致の回避）
+    // eslint-disable-next-line react-hooks/set-state-in-effect
+    setJoinUrl(`${base}/join/${sessionId}`);
   }, [sessionId]);
 
   const interactive = configured && state.sessionActive;
@@ -80,24 +84,18 @@ export default function DisplayPage() {
     interactive && state.commentsEnabled && slide.showComments !== false;
   const showReactions =
     interactive && state.reactionsEnabled && slide.showReactions !== false;
-  const showPoll =
-    interactive && (state.mode === "poll" || slide.mode === "poll");
+  // 投票スライド（mode: poll）では画像の代わりに専用の投票画面を全面表示する
+  const isPollScreen = slide.mode === "poll";
   const themeLabel = getPollOption(state.selectedTheme)?.label ?? null;
 
   return (
     <main className="flex h-screen w-screen items-center justify-center overflow-hidden bg-black">
       <div className="relative aspect-video max-h-screen w-full max-w-[177.78vh]">
-        {/* 1-2. スライド画像・動画 */}
-        <SlideRenderer slide={slide} />
-
-        {/* 3. 投票結果 */}
-        {showPoll && (
-          <PollResult
-            tallies={poll.tallies}
-            totalVotes={poll.totalVotes}
-            status={poll.status}
-            selectedTheme={state.selectedTheme}
-          />
+        {/* 1-2. スライド画像・動画（投票スライドは専用画面に差し替え） */}
+        {isPollScreen ? (
+          <PollBoard poll={poll} selectedTheme={state.selectedTheme} />
+        ) : (
+          <SlideRenderer slide={slide} />
         )}
 
         {/* 3. 質問カード */}

@@ -5,22 +5,25 @@ import { motion, AnimatePresence } from "framer-motion";
 import { useReactionStream, type ReactionEvent } from "@/hooks/useReactions";
 import { getReaction } from "@/config/reactions";
 
-const MAX_BUBBLES = 12;
-/** この時間内に同種のリアクションが来たらまとめて「× n」表示にする */
-const MERGE_WINDOW_MS = 1800;
-const BUBBLE_LIFETIME_MS = 3200;
+/** 同じ種類のリアクションを同時に表示する上限 */
+const MAX_PER_TYPE = 6;
+/** 全種類あわせた同時表示の上限（描画負荷対策） */
+const MAX_TOTAL = 28;
+const BUBBLE_LIFETIME_MS = 3600;
 
 type Bubble = {
   key: number;
   emoji: string;
-  count: number;
-  x: number;
-  bornAt: number;
   type: string;
+  x: number;
+  drift: number;
+  size: number;
+  bornAt: number;
 };
 
 /**
- * 参加者のリアクション絵文字を浮かび上がらせるレイヤー。
+ * 参加者のリアクションを「シャボン玉に包まれた絵文字」として浮かべるレイヤー。
+ * まとめ表示（×n）はせず、押された数だけ1個ずつ表示する。
  * 表示を止めるときは親側でアンマウントする。
  */
 export function ReactionLayer({ sessionId }: { sessionId: string }) {
@@ -33,27 +36,19 @@ export function ReactionLayer({ sessionId }: { sessionId: string }) {
     setBubbles((prev) => {
       const now = Date.now();
       const alive = prev.filter((b) => now - b.bornAt < BUBBLE_LIFETIME_MS);
-      const mergeIndex = alive.findIndex(
-        (b) => b.type === event.type && now - b.bornAt < MERGE_WINDOW_MS
-      );
-      if (mergeIndex >= 0) {
-        const copy = [...alive];
-        copy[mergeIndex] = {
-          ...copy[mergeIndex],
-          count: copy[mergeIndex].count + 1,
-        };
-        return copy;
-      }
-      if (alive.length >= MAX_BUBBLES) return alive;
+      // 同種は最大6個まで。全体上限にも達していたら無視する
+      const sameType = alive.filter((b) => b.type === event.type).length;
+      if (sameType >= MAX_PER_TYPE || alive.length >= MAX_TOTAL) return alive;
       return [
         ...alive,
         {
           key: nextKeyRef.current++,
           emoji: def.emoji,
-          count: 1,
-          x: 8 + Math.random() * 84,
-          bornAt: now,
           type: event.type,
+          x: 6 + Math.random() * 88,
+          drift: (Math.random() - 0.5) * 8,
+          size: 3 + Math.random() * 1.2,
+          bornAt: now,
         },
       ];
     });
@@ -61,7 +56,7 @@ export function ReactionLayer({ sessionId }: { sessionId: string }) {
 
   useReactionStream(sessionId, true, handleReaction);
 
-  // 寿命が切れたバブルを定期的に掃除する
+  // 寿命切れのバブルを定期的に掃除する
   useEffect(() => {
     const timer = setInterval(() => {
       const now = Date.now();
@@ -69,7 +64,7 @@ export function ReactionLayer({ sessionId }: { sessionId: string }) {
         const alive = prev.filter((b) => now - b.bornAt < BUBBLE_LIFETIME_MS);
         return alive.length === prev.length ? prev : alive;
       });
-    }, 500);
+    }, 600);
     return () => clearInterval(timer);
   }, []);
 
@@ -79,25 +74,48 @@ export function ReactionLayer({ sessionId }: { sessionId: string }) {
         {bubbles.map((b) => (
           <motion.div
             key={b.key}
-            initial={{ opacity: 0, y: 0, scale: 0.6 }}
-            animate={{ opacity: [0, 1, 1, 0], y: -220, scale: 1 }}
+            initial={{ opacity: 0, y: 20, scale: 0.4 }}
+            animate={{
+              opacity: [0, 1, 1, 0],
+              y: -260,
+              x: b.drift * 12,
+              scale: 1,
+            }}
             exit={{ opacity: 0 }}
             transition={{ duration: BUBBLE_LIFETIME_MS / 1000, ease: "easeOut" }}
-            className="absolute bottom-[10%] flex items-center gap-1"
-            style={{ left: `${b.x}%` }}
+            className="absolute bottom-[8%] flex items-center justify-center"
+            style={{ left: `${b.x}%`, width: `${b.size}vw`, height: `${b.size}vw` }}
           >
-            <span style={{ fontSize: "3.2vw" }}>{b.emoji}</span>
-            {b.count > 1 && (
-              <span
-                className="font-bold text-white"
-                style={{
-                  fontSize: "1.8vw",
-                  textShadow: "2px 2px 4px rgba(0,0,0,0.8)",
-                }}
-              >
-                × {b.count}
-              </span>
-            )}
+            {/* シャボン玉 */}
+            <span
+              className="absolute inset-0 rounded-full"
+              style={{
+                background:
+                  "radial-gradient(circle at 32% 28%, rgba(255,255,255,0.9) 0%, rgba(255,255,255,0.35) 18%, rgba(186,230,253,0.22) 45%, rgba(129,140,248,0.18) 70%, rgba(255,255,255,0.05) 100%)",
+                border: "1px solid rgba(255,255,255,0.5)",
+                boxShadow:
+                  "inset 0 0 1.2vw rgba(255,255,255,0.5), 0 0 0.8vw rgba(255,255,255,0.25)",
+                backdropFilter: "blur(1px)",
+              }}
+            />
+            {/* ハイライト（光の反射） */}
+            <span
+              className="absolute rounded-full bg-white/80"
+              style={{
+                width: "22%",
+                height: "22%",
+                left: "24%",
+                top: "20%",
+                filter: "blur(0.5px)",
+              }}
+            />
+            {/* 絵文字 */}
+            <span
+              className="relative"
+              style={{ fontSize: `${b.size * 0.52}vw`, lineHeight: 1 }}
+            >
+              {b.emoji}
+            </span>
           </motion.div>
         ))}
       </AnimatePresence>
