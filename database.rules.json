@@ -1,0 +1,68 @@
+{
+  "rules": {
+    ".read": false,
+    ".write": false,
+
+    "admins": {
+      ".read": "auth != null",
+      ".write": false
+    },
+
+    "sessions": {
+      "$sessionId": {
+        ".read": "auth != null",
+
+        "state": {
+          ".write": "auth != null && root.child('admins').child(auth.uid).val() === true"
+        },
+
+        "poll": {
+          ".write": "auth != null && root.child('admins').child(auth.uid).val() === true",
+          "voters": {
+            "$uid": {
+              ".write": "auth != null && auth.uid === $uid && root.child('sessions').child($sessionId).child('poll').child('status').val() === 'open' && !root.child('sessions').child($sessionId).child('blockedUsers').child(auth.uid).exists()",
+              ".validate": "newData.isString()"
+            }
+          }
+        },
+
+        "comments": {
+          ".write": "auth != null && root.child('admins').child(auth.uid).val() === true",
+          "$commentId": {
+            ".write": "auth != null && !data.exists() && root.child('sessions').child($sessionId).child('state').child('sessionActive').val() === true && root.child('sessions').child($sessionId).child('state').child('commentsEnabled').val() === true && !root.child('sessions').child($sessionId).child('blockedUsers').child(auth.uid).exists()",
+            ".validate": "newData.child('userId').val() === auth.uid && newData.child('text').isString() && newData.child('text').val().length >= 1 && newData.child('text').val().length <= 30"
+          }
+        },
+
+        "reactions": {
+          ".write": "auth != null && root.child('admins').child(auth.uid).val() === true",
+          "$reactionId": {
+            ".write": "auth != null && !data.exists() && root.child('sessions').child($sessionId).child('state').child('sessionActive').val() === true && root.child('sessions').child($sessionId).child('state').child('reactionsEnabled').val() === true && !root.child('sessions').child($sessionId).child('blockedUsers').child(auth.uid).exists()",
+            ".validate": "newData.child('userId').val() === auth.uid && (newData.child('type').val() === 'like' || newData.child('type').val() === 'laugh' || newData.child('type').val() === 'hmm' || newData.child('type').val() === 'more' || newData.child('type').val() === 'wow')"
+          }
+        },
+
+        "questions": {
+          ".write": "auth != null && root.child('admins').child(auth.uid).val() === true",
+          "$questionId": {
+            ".write": "auth != null && root.child('admins').child(auth.uid).val() === true || (auth != null && !data.exists() && root.child('sessions').child($sessionId).child('state').child('sessionActive').val() === true && !root.child('sessions').child($sessionId).child('blockedUsers').child(auth.uid).exists())",
+            ".validate": "newData.child('text').isString() && newData.child('text').val().length >= 1 && newData.child('text').val().length <= 80 && (root.child('admins').child(auth.uid).val() === true || newData.child('userId').val() === auth.uid)",
+            "status": {
+              ".write": "auth != null && root.child('admins').child(auth.uid).val() === true"
+            }
+          }
+        },
+
+        "presence": {
+          "$uid": {
+            ".write": "auth != null && auth.uid === $uid"
+          }
+        },
+
+        "blockedUsers": {
+          ".write": "auth != null && root.child('admins').child(auth.uid).val() === true"
+        }
+      }
+    }
+  }
+}
