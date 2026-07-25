@@ -78,13 +78,27 @@ npm run dev
 
 ## スライド画像の差し替え
 
-現在は開発用プレースホルダーSVGが入っている。本番前に：
-
 1. Canvaの全8ページを **1920×1080のPNGまたはWebP** で書き出す
-2. `public/slides/slide-01.webp` 〜 `slide-08.webp` として配置
-3. [src/config/slides.ts](src/config/slides.ts) の `image` パスを `.svg` → `.webp` に変更
+2. `public/slides/1.png` 〜 `8.png` を置き換える（別の拡張子にする場合は
+   [src/config/slides.ts](src/config/slides.ts) の `image` パスも直す）
+3. **`qr.position` を見直す**（下記）
 
 スライド内の動画は `public/videos/` に配置し、`slides.ts` の `video` 設定（0〜1の比率で位置指定）を有効化する。自動再生には `muted: true` が必須。
+
+### 参加用QRコードの位置
+
+QRはスライドごとに置く隅を変えている。図版や文字に被らない位置を画像を見て
+決めているため、**スライドを差し替えたら必ず見直すこと**。
+
+```ts
+qr: { position: "top-right" }              // 通常サイズ
+qr: { position: "top-left", size: "large" } // 導入スライド用の大きい表示
+showQr: false                               // そのスライドでは出さない
+```
+
+`position` は `top-left` / `top-right` / `bottom-left` / `bottom-right`。
+通常サイズは1920×1080換算でおよそ 146×197px、`large` は約 334×420px を占める。
+差し替え後は `/display` を開いて実際に重なっていないか確認する。
 
 ## 当日の操作
 

@@ -1,7 +1,8 @@
 // スライド定義
 // Canvaから書き出した 1920x1080 の画像を /public/slides/ に置き、image のパスを差し替える。
-// 開発用にプレースホルダーSVG (slide-01.svg など) を同梱している。
-// 本番では slide-01.webp などに変更する。
+//
+// qr.position はスライド画像の余白を実際に見て決めている。
+// 画像を差し替えたら、QRが図版や文字に被っていないか /display で必ず確認すること。
 
 export type SlideMode = "reaction" | "poll" | "talk" | "question" | "ending";
 
@@ -17,6 +18,20 @@ export type SlideVideo = {
   muted?: boolean;
 };
 
+/** QRコードを置く隅。スライドの中身と重ならない位置を選ぶ */
+export type QrPosition =
+  | "top-left"
+  | "top-right"
+  | "bottom-left"
+  | "bottom-right";
+
+export type SlideQr = {
+  /** 既定は bottom-right */
+  position?: QrPosition;
+  /** large は導入スライド用の大きい表示 */
+  size?: "normal" | "large";
+};
+
 export type SlideConfig = {
   id: number;
   image: string;
@@ -24,6 +39,8 @@ export type SlideConfig = {
   title?: string;
   video?: SlideVideo;
   showQr?: boolean;
+  /** QRの位置・大きさ。スライド画像の余白に合わせて指定する */
+  qr?: SlideQr;
   showComments?: boolean;
   showReactions?: boolean;
 };
@@ -35,6 +52,8 @@ export const slides: SlideConfig[] = [
     mode: "reaction",
     title: "タイトル",
     showQr: true,
+    // 左側が大きく空いているので、導入として大きめに出す
+    qr: { position: "top-left", size: "large" },
     showComments: true,
     showReactions: true,
   },
@@ -44,6 +63,8 @@ export const slides: SlideConfig[] = [
     mode: "reaction",
     title: "登壇者の自己紹介",
     showQr: true,
+    // 右上（登壇者名の上）が空いている
+    qr: { position: "top-right" },
     showComments: true,
     showReactions: true,
   },
@@ -51,8 +72,10 @@ export const slides: SlideConfig[] = [
     id: 3,
     image: "/slides/3.png",
     mode: "reaction",
-    title: "チーム紹介・ハッカソン",
+    title: "解決したい課題",
     showQr: true,
+    // 右上（図版の右・FITロゴの上）が空いている
+    qr: { position: "top-right" },
     showComments: true,
     showReactions: true,
   },
@@ -62,6 +85,8 @@ export const slides: SlideConfig[] = [
     mode: "reaction",
     title: "学習支援アプリ「ピークる」",
     showQr: true,
+    // 左上が完全に空いている
+    qr: { position: "top-left" },
     showComments: true,
     showReactions: true,
     // デモ動画を重ねる場合は /public/videos/ に置いて以下を有効化する
@@ -80,8 +105,10 @@ export const slides: SlideConfig[] = [
     id: 5,
     image: "/slides/5.png",
     mode: "reaction",
-    title: "ハッカソンで得た経験",
+    title: "ピークるとは？（BEFORE / AFTER）",
     showQr: true,
+    // 右上（見出しの右・キラキラ装飾の上）が空いている
+    qr: { position: "top-right" },
     showComments: true,
     showReactions: true,
   },
@@ -89,8 +116,10 @@ export const slides: SlideConfig[] = [
     id: 6,
     image: "/slides/6.png",
     mode: "reaction",
-    title: "受賞・外部発表などの活動実績",
+    title: "ハッカソンで得たもの",
     showQr: true,
+    // 右上（EXPERIENCEの上）が空いている
+    qr: { position: "top-right" },
     showComments: true,
     showReactions: true,
   },
@@ -99,7 +128,9 @@ export const slides: SlideConfig[] = [
     image: "/slides/7.png",
     mode: "poll",
     title: "トークテーマ投票",
-    showQr: true,
+    // 投票画面（PollBoard）は四隅すべてを票数・見出しで使っているため、
+    // どこに置いても数字か文字に被る。投票中は参加済みの人しか操作しないので出さない。
+    showQr: false,
     showComments: false,
     showReactions: false,
   },
@@ -109,6 +140,8 @@ export const slides: SlideConfig[] = [
     mode: "ending",
     title: "エンディング・質問受付",
     showQr: true,
+    // 右上（タイトルの右）が空いている。既存のQRと離す
+    qr: { position: "top-right" },
     showComments: true,
     showReactions: true,
   },

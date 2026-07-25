@@ -1,55 +1,38 @@
 "use client";
 
-import { QRCodeSVG } from "qrcode.react";
+import type { SlideQr } from "@/config/slides";
+import { JoinQr } from "./JoinQr";
 
 type Props = {
   joinUrl: string;
   showQr: boolean;
-  connected: boolean;
-  connectionCount: number;
+  /** 表示中のスライドに設定されたQRの位置・大きさ */
+  qr?: SlideQr;
   themeLabel?: string | null;
 };
 
-/** QRコード・接続人数・現在テーマなどの常設UI */
-export function PersistentStatus({
-  joinUrl,
-  showQr,
-  connected,
-  connectionCount,
-  themeLabel,
-}: Props) {
+/** QRコード・現在テーマなどの常設UI */
+export function PersistentStatus({ joinUrl, showQr, qr, themeLabel }: Props) {
   return (
     <div className="pointer-events-none absolute inset-0 z-50">
-      {/* 現在のテーマ（左上） */}
+      {/*
+        現在のテーマ（下辺の中央）。
+        QRはスライドごとに四隅を移動するため、ぶつからない位置に置いている。
+      */}
       {themeLabel && (
-        <div className="absolute left-[1.5%] top-[2.5%] rounded-full bg-black/70 px-[1.2vw] py-[0.5vw]">
-          <span className="font-bold text-yellow-300" style={{ fontSize: "1.3vw" }}>
-            🎤 テーマ：{themeLabel}
-          </span>
+        <div className="absolute inset-x-0 bottom-[3%] flex justify-center">
+          <div className="max-w-[60%] rounded-full bg-black/75 px-[1.4vw] py-[0.5vw]">
+            <span
+              className="font-bold text-yellow-300"
+              style={{ fontSize: "1.3vw" }}
+            >
+              🎤 テーマ：{themeLabel}
+            </span>
+          </div>
         </div>
       )}
 
-      {/* QRコード（右下） */}
-      {showQr && joinUrl && (
-        <div className="absolute bottom-[3%] right-[1.5%] flex flex-col items-center gap-[0.4vw] rounded-xl bg-white p-[0.8vw] shadow-lg">
-          <QRCodeSVG value={joinUrl} size={130} style={{ width: "8vw", height: "8vw" }} />
-          <span className="font-bold text-slate-800" style={{ fontSize: "0.9vw" }}>
-            スマホで参加！
-          </span>
-        </div>
-      )}
-
-      {/* 接続人数・通信状態（左下） */}
-      <div className="absolute bottom-[3%] left-[1.5%] flex items-center gap-[1vw] rounded-full bg-black/70 px-[1.2vw] py-[0.5vw]">
-        <span
-          className={`inline-block h-[0.8vw] w-[0.8vw] rounded-full ${
-            connected ? "bg-green-400" : "bg-red-500 animate-pulse"
-          }`}
-        />
-        <span className="text-white" style={{ fontSize: "1.1vw" }}>
-          {connected ? `参加中 ${connectionCount} 人` : "再接続中…"}
-        </span>
-      </div>
+      {showQr && joinUrl && <JoinQr joinUrl={joinUrl} qr={qr} />}
     </div>
   );
 }

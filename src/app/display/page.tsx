@@ -6,7 +6,6 @@ import { DEFAULT_SESSION_ID } from "@/lib/session";
 import { getPollOption } from "@/config/pollOptions";
 import { useAnonymousAuth } from "@/hooks/useAnonymousAuth";
 import { useSessionState } from "@/hooks/useSessionState";
-import { useConnectionCount } from "@/hooks/usePresence";
 import { usePoll } from "@/hooks/usePoll";
 import { SlideRenderer } from "@/components/slides/SlideRenderer";
 import { CommentLayer } from "@/components/display/CommentLayer";
@@ -19,7 +18,6 @@ export default function DisplayPage() {
   const sessionId = DEFAULT_SESSION_ID;
   const { uid } = useAnonymousAuth();
   const { state, connected, configured } = useSessionState(sessionId);
-  const connectionCount = useConnectionCount(sessionId);
   const poll = usePoll(sessionId, uid);
 
   // スライドは管理者画面からの同期のみで動かす。
@@ -81,9 +79,9 @@ export default function DisplayPage() {
           <PersistentStatus
             joinUrl={joinUrl}
             showQr={slide.showQr !== false && state.sessionActive}
-            connected={connected}
-            connectionCount={connectionCount}
-            themeLabel={themeLabel}
+            qr={slide.qr}
+            // 投票画面は選ばれたテーマを自前で大きく出すので、ここでは重ねない
+            themeLabel={isPollScreen ? null : themeLabel}
           />
         )}
 
