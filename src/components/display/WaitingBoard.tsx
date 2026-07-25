@@ -6,16 +6,11 @@ import { QRCodeSVG } from "qrcode.react";
 const ACCENT = "#00a0e9";
 const SIGNAL = "#d9e021";
 
-const STEPS = [
-  { n: "1", text: "スマホのカメラでQRを読み取る" },
-  { n: "2", text: "リアクションやコメントを送る" },
-  { n: "3", text: "送ったものがこの画面に出る" },
-];
-
 /**
  * トークセッション開始前の待機画面。
  *
- * 会場に着いた高校生に「このQRは何か」「読み取ると何ができるか」を伝えるのが役目。
+ * 会場に着いた高校生に「このQRを読めば参加できる」ことだけを伝える。
+ * 何ができるかは本編で明かしたいので、機能の説明はあえて置かない。
  * 待たされていることが不安にならないよう、準備中であることを動きで示す。
  */
 export function WaitingBoard({ joinUrl }: { joinUrl: string }) {
@@ -90,35 +85,17 @@ export function WaitingBoard({ joinUrl }: { joinUrl: string }) {
                 value={joinUrl}
                 size={512}
                 level="M"
-                style={{ width: "17vw", height: "17vw", display: "block" }}
+                style={{ width: "20vw", height: "20vw", display: "block" }}
               />
             </div>
           </div>
 
-          {/* 参加後にできること */}
-          <div className="mt-[1.6vw] flex items-start gap-[2.4vw]">
-            {STEPS.map((step) => (
-              <div key={step.n} className="flex items-center gap-[0.7vw]">
-                <span
-                  className="flex shrink-0 items-center justify-center rounded-full font-black text-[#1f2124]"
-                  style={{
-                    width: "1.9vw",
-                    height: "1.9vw",
-                    fontSize: "1.05vw",
-                    backgroundColor: SIGNAL,
-                  }}
-                >
-                  {step.n}
-                </span>
-                <span
-                  className="font-bold text-white/90"
-                  style={{ fontSize: "1.15vw" }}
-                >
-                  {step.text}
-                </span>
-              </div>
-            ))}
-          </div>
+          <p
+            className="mt-[1.3vw] font-bold text-white/70"
+            style={{ fontSize: "1.15vw" }}
+          >
+            スマホのカメラをかざしてください
+          </p>
         </div>
 
         {/* 準備中の案内 */}
