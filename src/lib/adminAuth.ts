@@ -20,11 +20,10 @@ export async function signInAdmin(
   uid: string,
   passcode: string
 ): Promise<boolean> {
-  try {
-    await set(ref(db, `adminAuth/${uid}`), passcode);
-  } catch {
-    return false;
-  }
+  // 書き込みが拒否されてもここでは中断しない。
+  // ルールがまだ adminPasscode 方式に更新されていない場合でも、
+  // admins 許可リストに載っている端末は次の判定で通す（締め出し防止）。
+  await set(ref(db, `adminAuth/${uid}`), passcode).catch(() => {});
 
   try {
     // 管理者しか書けない場所に書けるかどうかで判定する。
