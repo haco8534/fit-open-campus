@@ -92,27 +92,6 @@ export async function goToSlide(
   await updateState(db, sessionId, patch);
 }
 
-/** 進行役が手動でモードを指定する。以降スライド送りでは上書きされない */
-export async function setMode(
-  db: Database,
-  sessionId: string,
-  mode: SessionMode
-): Promise<void> {
-  await updateState(db, sessionId, { mode, modeLocked: true });
-}
-
-/** モードの手動固定を解除し、いま表示中のスライドの mode に戻す */
-export async function followSlideMode(
-  db: Database,
-  sessionId: string,
-  slideId: number
-): Promise<void> {
-  await updateState(db, sessionId, {
-    modeLocked: false,
-    mode: getSlide(slideId).mode,
-  });
-}
-
 export async function openPoll(db: Database, sessionId: string): Promise<void> {
   await set(ref(db, sessionPath(sessionId, "poll", "status")), "open");
   // 投票中にスライドを動かしても投票画面が消えないよう mode を固定する
@@ -123,20 +102,36 @@ export async function openPoll(db: Database, sessionId: string): Promise<void> {
   });
 }
 
-/** 投票終了。winnerId が null の場合は同票などで進行役が選ぶ */
+/**
+ * 投票終了。winnerId が null の場合は同票などで進行役が選ぶ。
+ * 投票中の mode 固定を解除し、表示中のスライドのモードに戻す。
+ */
 export async function closePoll(
   db: Database,
   sessionId: string,
-  winnerId: string | null
+  winnerId: string | null,
+  currentSlide: number
 ): Promise<void> {
   await set(ref(db, sessionPath(sessionId, "poll", "status")), "closed");
-  await updateState(db, sessionId, { selectedTheme: winnerId });
+  await updateState(db, sessionId, {
+    selectedTheme: winnerId,
+    modeLocked: false,
+    mode: getSlide(currentSlide).mode,
+  });
 }
 
-export async function resetPoll(db: Database, sessionId: string): Promise<void> {
+export async function resetPoll(
+  db: Database,
+  sessionId: string,
+  currentSlide: number
+): Promise<void> {
   await remove(ref(db, sessionPath(sessionId, "poll", "voters")));
   await set(ref(db, sessionPath(sessionId, "poll", "status")), "closed");
-  await updateState(db, sessionId, { selectedTheme: null });
+  await updateState(db, sessionId, {
+    selectedTheme: null,
+    modeLocked: false,
+    mode: getSlide(currentSlide).mode,
+  });
 }
 
 export async function setSelectedTheme(

@@ -106,6 +106,7 @@ export default function JoinPage() {
           </div>
         );
 
+      // スライド8（エンディング・質問受付）。質問フォームもここに出す
       case "ending":
         return (
           <div className="flex flex-col gap-3">
@@ -115,6 +116,7 @@ export default function JoinPage() {
                 気になることは、近くのスタッフや登壇者にも気軽に聞いてみてください。
               </p>
             </div>
+            <QuestionForm onSend={sendQuestion} />
             <ReactionPanel
               onSend={sendReaction}
               disabled={!state.reactionsEnabled}

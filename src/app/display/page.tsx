@@ -1,12 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import {
-  FIRST_SLIDE_ID,
-  LAST_SLIDE_ID,
-  getSlide,
-  slides,
-} from "@/config/slides";
+import { getSlide, slides } from "@/config/slides";
 import { DEFAULT_SESSION_ID } from "@/lib/session";
 import { getPollOption } from "@/config/pollOptions";
 import { useAnonymousAuth } from "@/hooks/useAnonymousAuth";
@@ -27,39 +22,10 @@ export default function DisplayPage() {
   const connectionCount = useConnectionCount(sessionId);
   const poll = usePoll(sessionId, uid);
 
-  // 通信障害時のローカルフォールバック（左右キーで手動操作）。
-  // 操作時点のリモートスライド番号を base として保持し、
-  // 管理者がスライドを変えたら（base が変わったら）自動的に同期へ戻る。
-  const [localOverride, setLocalOverride] = useState<{
-    slide: number;
-    base: number;
-  } | null>(null);
-
-  const remoteSlide = state.currentSlide;
-  const effectiveSlide =
-    localOverride && localOverride.base === remoteSlide
-      ? localOverride.slide
-      : remoteSlide;
-
-  useEffect(() => {
-    const handler = (e: KeyboardEvent) => {
-      if (e.key === "ArrowRight") {
-        setLocalOverride({
-          slide: Math.min(LAST_SLIDE_ID, effectiveSlide + 1),
-          base: remoteSlide,
-        });
-      } else if (e.key === "ArrowLeft") {
-        setLocalOverride({
-          slide: Math.max(FIRST_SLIDE_ID, effectiveSlide - 1),
-          base: remoteSlide,
-        });
-      }
-    };
-    window.addEventListener("keydown", handler);
-    return () => window.removeEventListener("keydown", handler);
-  }, [effectiveSlide, remoteSlide]);
-
-  const slide = getSlide(effectiveSlide);
+  // スライドは管理者画面からの同期のみで動かす。
+  // この画面でキーボード操作を受け付けると、会場PCで誤ってキーを押したときに
+  // 管理者画面と表示がずれるため、キーハンドラは持たない。
+  const slide = getSlide(state.currentSlide);
 
   // スライド画像の事前読み込み
   useEffect(() => {
@@ -125,14 +91,14 @@ export default function DisplayPage() {
         {configured && !connected && (
           <div className="absolute inset-x-0 top-0 z-[60] flex justify-center">
             <div className="mt-[1%] rounded-full bg-red-600/90 px-[1.5vw] py-[0.5vw] text-white" style={{ fontSize: "1.1vw" }}>
-              ⚠ 通信が切断されています（←→キーでスライド操作できます）
+              ⚠ 通信が切断されています（再接続を試みています）
             </div>
           </div>
         )}
         {!configured && (
           <div className="absolute inset-x-0 top-0 z-[60] flex justify-center">
             <div className="mt-[1%] rounded-full bg-amber-600/90 px-[1.5vw] py-[0.5vw] text-white" style={{ fontSize: "1.1vw" }}>
-              Firebase未設定：ローカルスライドモード（←→キーで操作）
+              Firebase未設定：スライドのみ表示しています
             </div>
           </div>
         )}

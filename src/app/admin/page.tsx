@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useEffect } from "react";
+import { useCallback, useEffect, useState } from "react";
 import {
   DEFAULT_SESSION_ID,
   blockUser,
@@ -8,18 +8,15 @@ import {
   closePoll,
   deleteQuestion,
   featureQuestion,
-  followSlideMode,
   goToSlide,
   openPoll,
   resetPoll,
-  resetSession,
-  setMode,
   setQuestionStatus,
   setSelectedTheme,
   setSessionActive,
   updateState,
-  type SessionMode,
 } from "@/lib/session";
+import { isAdminUnlocked, signInAdmin } from "@/lib/adminAuth";
 import { getDb } from "@/lib/firebase";
 import { FIRST_SLIDE_ID, LAST_SLIDE_ID } from "@/config/slides";
 import { useAnonymousAuth } from "@/hooks/useAnonymousAuth";
@@ -28,19 +25,11 @@ import { useConnectionCount } from "@/hooks/usePresence";
 import { usePoll } from "@/hooks/usePoll";
 import { useRecentComments } from "@/hooks/useComments";
 import { useQuestions, type QuestionRecord } from "@/hooks/useQuestions";
+import { AdminLogin } from "@/components/admin/AdminLogin";
 import { SlideController } from "@/components/admin/SlideController";
 import { PollController } from "@/components/admin/PollController";
 import { CommentController } from "@/components/admin/CommentController";
 import { QuestionController } from "@/components/admin/QuestionController";
-import { SessionController } from "@/components/admin/SessionController";
-
-const MODES: { mode: SessionMode; label: string }[] = [
-  { mode: "reaction", label: "リアクション" },
-  { mode: "poll", label: "投票" },
-  { mode: "talk", label: "座談会" },
-  { mode: "question", label: "質疑応答" },
-  { mode: "ending", label: "エンディング" },
-];
 
 export default function AdminPage() {
   const sessionId = DEFAULT_SESSION_ID;
@@ -50,6 +39,25 @@ export default function AdminPage() {
   const poll = usePoll(sessionId, uid);
   const comments = useRecentComments(sessionId);
   const questions = useQuestions(sessionId);
+
+  // パスワードによる管理者ログイン。タブを閉じるまで有効
+  const [unlocked, setUnlocked] = useState(false);
+  useEffect(() => {
+    // sessionStorage はサーバー描画時に読めないのでマウント後に反映する
+    // eslint-disable-next-line react-hooks/set-state-in-effect
+    setUnlocked(isAdminUnlocked());
+  }, []);
+
+  const handleLogin = useCallback(
+    async (passcode: string): Promise<boolean> => {
+      const db = getDb();
+      if (!db || !uid) return false;
+      const ok = await signInAdmin(db, sessionId, uid, passcode);
+      if (ok) setUnlocked(true);
+      return ok;
+    },
+    [sessionId, uid]
+  );
 
   const withDb = useCallback(
     (fn: (db: NonNullable<ReturnType<typeof getDb>>) => Promise<void>) => {
@@ -61,7 +69,7 @@ export default function AdminPage() {
       fn(db).catch((e) => {
         console.error(e);
         alert(
-          "操作に失敗しました。管理者権限（admins/あなたのUID）が設定されているか確認してください。"
+          "操作に失敗しました。通信状況を確認し、必要ならページを再読み込みしてログインし直してください。"
         );
       });
     },
@@ -90,11 +98,13 @@ export default function AdminPage() {
 
   const handlePollToggle = useCallback(() => {
     if (poll.status === "open") {
-      withDb((db) => closePoll(db, sessionId, poll.leaderId));
+      withDb((db) =>
+        closePoll(db, sessionId, poll.leaderId, state.currentSlide)
+      );
     } else {
       withDb((db) => openPoll(db, sessionId));
     }
-  }, [withDb, sessionId, poll.status, poll.leaderId]);
+  }, [withDb, sessionId, poll.status, poll.leaderId, state.currentSlide]);
 
   const handleToggleComments = useCallback(() => {
     withDb((db) =>
@@ -108,8 +118,9 @@ export default function AdminPage() {
     );
   }, [withDb, sessionId, state.reactionsEnabled]);
 
-  // キーボードショートカット
+  // キーボードショートカット（ログイン前は無効）
   useEffect(() => {
+    if (!unlocked) return;
     const handler = (e: KeyboardEvent) => {
       const target = e.target as HTMLElement | null;
       if (
@@ -172,7 +183,12 @@ export default function AdminPage() {
     withDb,
     sessionId,
     state.sessionActive,
+    unlocked,
   ]);
+
+  if (configured && !unlocked) {
+    return <AdminLogin onSubmit={handleLogin} ready={Boolean(uid)} />;
+  }
 
   // main の text-slate-800 は必須：付けないと端末がダークモードのとき
   // body の色（明るいグレー）を継承して、白カード上のコメント・質問が読めなくなる
@@ -187,7 +203,15 @@ export default function AdminPage() {
                 緊急停止中
               </span>
             )}
-            <span>
+            <span className="flex items-center gap-1.5">
+              <span
+                className={`inline-block h-2 w-2 rounded-full ${
+                  connected ? "bg-green-500" : "animate-pulse bg-red-500"
+                }`}
+              />
+              接続 {connectionCount} 人
+            </span>
+            <span className="hidden sm:inline">
               ←→: スライド / P: 投票 / C: コメント / R: リアクション / Esc: 停止
             </span>
           </div>
@@ -200,15 +224,8 @@ export default function AdminPage() {
             Firebaseが未設定です。.env.local に接続情報を設定してください。
           </p>
         )}
-        {configured && uid && (
-          <p className="rounded-xl bg-white px-4 py-2 text-xs text-slate-400">
-            あなたのUID: <code className="select-all">{uid}</code>
-            （Realtime Database の <code>admins/{uid}</code> に true
-            を設定すると管理者として書き込みできます）
-          </p>
-        )}
 
-        <div className="grid gap-4 lg:grid-cols-2">
+        <div className="grid items-start gap-4 lg:grid-cols-2">
           <div className="flex flex-col gap-4">
             <SlideController
               currentSlide={state.currentSlide}
@@ -218,84 +235,27 @@ export default function AdminPage() {
               onSelect={move}
             />
 
-            {/* セッションモード手動変更 */}
-            <section className="rounded-2xl bg-white p-4 shadow-sm">
-              <div className="mb-3 flex items-center justify-between gap-2">
-                <h2 className="font-bold text-slate-700">参加者画面モード</h2>
-                <span
-                  className={`rounded-full px-3 py-1 text-xs font-bold ${
-                    state.modeLocked
-                      ? "bg-amber-100 text-amber-700"
-                      : "bg-slate-100 text-slate-500"
-                  }`}
-                >
-                  {state.modeLocked ? "🔒 手動固定中" : "スライドに追従"}
-                </span>
-              </div>
-              <div className="grid grid-cols-5 gap-2">
-                {MODES.map((m) => (
-                  <button
-                    key={m.mode}
-                    onClick={() => withDb((db) => setMode(db, sessionId, m.mode))}
-                    className={`rounded-lg py-2.5 text-xs font-bold ${
-                      state.mode === m.mode
-                        ? "bg-sky-600 text-white"
-                        : "bg-slate-100 text-slate-600 hover:bg-slate-200"
-                    }`}
-                  >
-                    {m.label}
-                  </button>
-                ))}
-              </div>
-              {state.modeLocked ? (
-                <button
-                  onClick={() =>
-                    withDb((db) =>
-                      followSlideMode(db, sessionId, state.currentSlide)
-                    )
-                  }
-                  className="mt-2 w-full rounded-lg bg-slate-100 py-2 text-xs font-bold text-slate-600 hover:bg-slate-200"
-                >
-                  スライド追従に戻す（現在のスライドのモードを適用）
-                </button>
-              ) : (
-                <p className="mt-2 text-xs text-slate-400">
-                  モードを手動で選ぶと固定され、スライドを動かしても切り替わらなくなります
-                </p>
-              )}
-            </section>
-
-            <SessionController
-              sessionActive={state.sessionActive}
-              connectionCount={connectionCount}
-              connected={connected}
-              onToggleActive={() =>
-                withDb((db) =>
-                  setSessionActive(db, sessionId, !state.sessionActive)
-                )
-              }
-              onResetSession={() => withDb((db) => resetSession(db, sessionId))}
-            />
-          </div>
-
-          <div className="flex flex-col gap-4">
             <PollController
               poll={poll}
               selectedTheme={state.selectedTheme}
               onStart={() => withDb((db) => openPoll(db, sessionId))}
               onEnd={() =>
-                withDb((db) => closePoll(db, sessionId, poll.leaderId))
+                withDb((db) =>
+                  closePoll(db, sessionId, poll.leaderId, state.currentSlide)
+                )
               }
               onReset={() => {
                 if (confirm("投票結果をリセットしますか？")) {
-                  withDb((db) => resetPoll(db, sessionId));
+                  withDb((db) => resetPoll(db, sessionId, state.currentSlide));
                 }
               }}
               onPickTheme={(themeId) =>
                 withDb((db) => setSelectedTheme(db, sessionId, themeId))
               }
             />
+          </div>
 
+          <div className="flex flex-col gap-4">
             <CommentController
               comments={comments}
               commentsEnabled={state.commentsEnabled}
