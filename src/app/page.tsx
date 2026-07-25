@@ -19,18 +19,18 @@ export default function Home() {
           🖥 メインモニター画面
         </Link>
         <Link
-          href="/admin"
-          className="rounded-2xl bg-slate-700 py-4 text-center text-lg font-bold hover:bg-slate-600"
-        >
-          🎛 管理者画面
-        </Link>
-        <Link
           href={`/join/${DEFAULT_SESSION_ID}`}
           className="rounded-2xl bg-green-600 py-4 text-center text-lg font-bold hover:bg-green-500"
         >
           📱 参加者画面
         </Link>
       </div>
+
+      {/*
+        管理者画面へのリンクは意図的に置いていない。
+        参加者はQRからこのドメインに来るため、リンクがあると誰でも進行操作画面を開けてしまう。
+        進行役は /admin を直接URL入力で開くこと。
+      */}
 
       <p className="text-xs text-slate-400">
         参加者はメインモニターのQRコードから /join/{DEFAULT_SESSION_ID} にアクセスします

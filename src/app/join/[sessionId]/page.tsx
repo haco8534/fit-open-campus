@@ -68,7 +68,7 @@ export default function JoinPage() {
   const params = useParams<{ sessionId: string }>();
   const sessionId = params?.sessionId ?? DEFAULT_SESSION_ID;
 
-  const uid = useAnonymousAuth();
+  const { uid, failed: authFailed } = useAnonymousAuth();
   usePresence(sessionId, uid);
   const { state, connected, configured, loaded } = useSessionState(sessionId);
   const connectionCount = useConnectionCount(sessionId);
@@ -91,7 +91,15 @@ export default function JoinPage() {
       );
     }
     if (!loaded || !uid) {
-      return <WaitingScreen title="接続中…" message="少しだけ待ってね" />;
+      // サインインに失敗しているときは黙って待たせない（自動で再試行し続けている）
+      return authFailed ? (
+        <WaitingScreen
+          title="接続をやり直しています"
+          message="電波の良い場所で少し待ってください。つながらないときは画面を再読み込みしてね"
+        />
+      ) : (
+        <WaitingScreen title="接続中…" message="少しだけ待ってね" />
+      );
     }
     if (!state.sessionActive) {
       return (

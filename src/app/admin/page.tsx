@@ -8,10 +8,12 @@ import {
   closePoll,
   deleteQuestion,
   featureQuestion,
+  followSlideMode,
   goToSlide,
   openPoll,
   resetPoll,
   resetSession,
+  setMode,
   setQuestionStatus,
   setSelectedTheme,
   setSessionActive,
@@ -42,7 +44,7 @@ const MODES: { mode: SessionMode; label: string }[] = [
 
 export default function AdminPage() {
   const sessionId = DEFAULT_SESSION_ID;
-  const uid = useAnonymousAuth();
+  const { uid } = useAnonymousAuth();
   const { state, connected, configured } = useSessionState(sessionId);
   const connectionCount = useConnectionCount(sessionId);
   const poll = usePoll(sessionId, uid);
@@ -66,17 +68,25 @@ export default function AdminPage() {
     []
   );
 
+  const move = useCallback(
+    (slideId: number) => {
+      withDb((db) =>
+        goToSlide(db, sessionId, slideId, {
+          currentSlide: state.currentSlide,
+          modeLocked: state.modeLocked,
+        })
+      );
+    },
+    [withDb, sessionId, state.currentSlide, state.modeLocked]
+  );
+
   const handlePrev = useCallback(() => {
-    withDb((db) =>
-      goToSlide(db, sessionId, Math.max(FIRST_SLIDE_ID, state.currentSlide - 1))
-    );
-  }, [withDb, sessionId, state.currentSlide]);
+    move(Math.max(FIRST_SLIDE_ID, state.currentSlide - 1));
+  }, [move, state.currentSlide]);
 
   const handleNext = useCallback(() => {
-    withDb((db) =>
-      goToSlide(db, sessionId, Math.min(LAST_SLIDE_ID, state.currentSlide + 1))
-    );
-  }, [withDb, sessionId, state.currentSlide]);
+    move(Math.min(LAST_SLIDE_ID, state.currentSlide + 1));
+  }, [move, state.currentSlide]);
 
   const handlePollToggle = useCallback(() => {
     if (poll.status === "open") {
@@ -104,10 +114,18 @@ export default function AdminPage() {
       const target = e.target as HTMLElement | null;
       if (
         target &&
-        (target.tagName === "INPUT" || target.tagName === "TEXTAREA")
+        (target.tagName === "INPUT" ||
+          target.tagName === "TEXTAREA" ||
+          target.isContentEditable)
       ) {
         return;
       }
+      // Ctrl+R（再読み込み）や Ctrl+P（印刷）でリアクション/投票が
+      // 誤って切り替わらないよう、修飾キー付きは無視する
+      if (e.ctrlKey || e.metaKey || e.altKey || e.isComposing) return;
+      // 矢印キーの長押しでスライドが飛ぶのを防ぐ
+      if (e.repeat) return;
+
       switch (e.key) {
         case "ArrowRight":
           handleNext();
@@ -128,7 +146,18 @@ export default function AdminPage() {
           handleToggleReactions();
           break;
         case "Escape":
-          withDb((db) => setSessionActive(db, sessionId, !state.sessionActive));
+          // Esc は全画面解除などで無意識に押されるキーなので必ず確認する
+          if (
+            confirm(
+              state.sessionActive
+                ? "参加型表示をすべて停止します。よろしいですか？"
+                : "参加型表示を再開しますか？"
+            )
+          ) {
+            withDb((db) =>
+              setSessionActive(db, sessionId, !state.sessionActive)
+            );
+          }
           break;
       }
     };
@@ -145,8 +174,10 @@ export default function AdminPage() {
     state.sessionActive,
   ]);
 
+  // main の text-slate-800 は必須：付けないと端末がダークモードのとき
+  // body の色（明るいグレー）を継承して、白カード上のコメント・質問が読めなくなる
   return (
-    <main className="min-h-screen bg-slate-100 pb-10">
+    <main className="min-h-screen bg-slate-100 pb-10 text-slate-800">
       <header className="sticky top-0 z-10 border-b border-slate-200 bg-white px-4 py-3">
         <div className="mx-auto flex max-w-5xl items-center justify-between">
           <h1 className="font-bold text-slate-800">管理者画面</h1>
@@ -184,21 +215,28 @@ export default function AdminPage() {
               currentMode={state.mode}
               onPrev={handlePrev}
               onNext={handleNext}
-              onSelect={(id) => withDb((db) => goToSlide(db, sessionId, id))}
+              onSelect={move}
             />
 
             {/* セッションモード手動変更 */}
             <section className="rounded-2xl bg-white p-4 shadow-sm">
-              <h2 className="mb-3 font-bold text-slate-700">
-                参加者画面モード
-              </h2>
+              <div className="mb-3 flex items-center justify-between gap-2">
+                <h2 className="font-bold text-slate-700">参加者画面モード</h2>
+                <span
+                  className={`rounded-full px-3 py-1 text-xs font-bold ${
+                    state.modeLocked
+                      ? "bg-amber-100 text-amber-700"
+                      : "bg-slate-100 text-slate-500"
+                  }`}
+                >
+                  {state.modeLocked ? "🔒 手動固定中" : "スライドに追従"}
+                </span>
+              </div>
               <div className="grid grid-cols-5 gap-2">
                 {MODES.map((m) => (
                   <button
                     key={m.mode}
-                    onClick={() =>
-                      withDb((db) => updateState(db, sessionId, { mode: m.mode }))
-                    }
+                    onClick={() => withDb((db) => setMode(db, sessionId, m.mode))}
                     className={`rounded-lg py-2.5 text-xs font-bold ${
                       state.mode === m.mode
                         ? "bg-sky-600 text-white"
@@ -209,6 +247,22 @@ export default function AdminPage() {
                   </button>
                 ))}
               </div>
+              {state.modeLocked ? (
+                <button
+                  onClick={() =>
+                    withDb((db) =>
+                      followSlideMode(db, sessionId, state.currentSlide)
+                    )
+                  }
+                  className="mt-2 w-full rounded-lg bg-slate-100 py-2 text-xs font-bold text-slate-600 hover:bg-slate-200"
+                >
+                  スライド追従に戻す（現在のスライドのモードを適用）
+                </button>
+              ) : (
+                <p className="mt-2 text-xs text-slate-400">
+                  モードを手動で選ぶと固定され、スライドを動かしても切り替わらなくなります
+                </p>
+              )}
             </section>
 
             <SessionController

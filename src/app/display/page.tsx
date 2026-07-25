@@ -22,7 +22,7 @@ import { PersistentStatus } from "@/components/display/PersistentStatus";
 
 export default function DisplayPage() {
   const sessionId = DEFAULT_SESSION_ID;
-  const uid = useAnonymousAuth();
+  const { uid } = useAnonymousAuth();
   const { state, connected, configured } = useSessionState(sessionId);
   const connectionCount = useConnectionCount(sessionId);
   const poll = usePoll(sessionId, uid);
@@ -84,8 +84,11 @@ export default function DisplayPage() {
     interactive && state.commentsEnabled && slide.showComments !== false;
   const showReactions =
     interactive && state.reactionsEnabled && slide.showReactions !== false;
-  // 投票スライド（mode: poll）では画像の代わりに専用の投票画面を全面表示する
-  const isPollScreen = slide.mode === "poll";
+  // 投票画面を出す条件。参加者画面が投票モードなら、どのスライドで
+  // 「投票開始」を押してもスクリーン側が必ず追従する（以前はスライド7でしか出なかった）。
+  // 投票スライドを表示中も出しっぱなしにして、投票終了後の座談会中に
+  // 選ばれたテーマを掲示し続けられるようにする。
+  const isPollScreen = state.mode === "poll" || slide.mode === "poll";
   const themeLabel = getPollOption(state.selectedTheme)?.label ?? null;
 
   return (

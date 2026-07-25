@@ -2,6 +2,7 @@
 
 import { useCallback, useEffect, useRef } from "react";
 import {
+  get,
   limitToLast,
   onChildAdded,
   push,
@@ -22,7 +23,8 @@ export type ReactionEvent = {
 };
 
 /**
- * メインモニター用：購読開始以降のリアクションイベントをコールバックで受け取る
+ * メインモニター用：購読開始以降のリアクションイベントをコールバックで受け取る。
+ * 既存分の判定は時刻ではなくキーで行う（端末時計のずれの影響を受けない）。
  */
 export function useReactionStream(
   sessionId: string,
@@ -39,22 +41,44 @@ export function useReactionStream(
     const db = getDb();
     if (!db) return;
 
-    const mountedAt = Date.now();
     const q = query(
       ref(db, sessionPath(sessionId, "reactions")),
       limitToLast(50)
     );
-    return onChildAdded(q, (snap) => {
-      const v = snap.val();
-      if (!v || !REACTION_TYPES.includes(v.type)) return;
-      if ((v.createdAt ?? 0) < mountedAt - 5000) return;
-      callbackRef.current({
-        id: snap.key ?? "",
-        type: v.type,
-        userId: v.userId ?? "",
-        createdAt: v.createdAt ?? 0,
+    const seen = new Set<string>();
+    let cancelled = false;
+    let detach: (() => void) | null = null;
+
+    const attach = () => {
+      if (cancelled) return;
+      detach = onChildAdded(q, (snap) => {
+        const key = snap.key;
+        if (!key || seen.has(key)) return;
+        seen.add(key);
+        const v = snap.val();
+        if (!v || !REACTION_TYPES.includes(v.type)) return;
+        callbackRef.current({
+          id: key,
+          type: v.type,
+          userId: v.userId ?? "",
+          createdAt: v.createdAt ?? 0,
+        });
       });
-    });
+    };
+
+    get(q)
+      .then((snap) => {
+        snap.forEach((child) => {
+          if (child.key) seen.add(child.key);
+        });
+      })
+      .catch(() => {})
+      .finally(attach);
+
+    return () => {
+      cancelled = true;
+      detach?.();
+    };
   }, [sessionId, enabled]);
 }
 

@@ -2,6 +2,7 @@
 
 import { useCallback, useEffect, useRef, useState } from "react";
 import {
+  get,
   limitToLast,
   onChildAdded,
   onValue,
@@ -62,6 +63,9 @@ export function useRecentComments(
 /**
  * メインモニター用：購読開始以降に追加されたコメントをコールバックで受け取る。
  * 過去分は流さない（途中参加・リロード時に古いコメントが再生されるのを防ぐ）。
+ *
+ * 「過去分」の判定に時刻は使わない。購読開始時点で既に存在するキーを控えておき、
+ * それ以外だけを流す。会場PCの時計がサーバー時刻とずれていても取りこぼさない。
  */
 export function useCommentStream(
   sessionId: string,
@@ -78,24 +82,46 @@ export function useCommentStream(
     const db = getDb();
     if (!db) return;
 
-    const mountedAt = Date.now();
     const q = query(
       ref(db, sessionPath(sessionId, "comments")),
       limitToLast(30)
     );
-    return onChildAdded(q, (snap) => {
-      const v = snap.val();
-      if (!v || typeof v.text !== "string") return;
-      // サーバー時刻とのずれを考慮して5秒の余裕を持たせる
-      if ((v.createdAt ?? 0) < mountedAt - 5000) return;
-      callbackRef.current({
-        id: snap.key ?? "",
-        text: v.text,
-        userId: v.userId ?? "",
-        status: v.status ?? "approved",
-        createdAt: v.createdAt ?? 0,
+    const seen = new Set<string>();
+    let cancelled = false;
+    let detach: (() => void) | null = null;
+
+    const attach = () => {
+      if (cancelled) return;
+      detach = onChildAdded(q, (snap) => {
+        const key = snap.key;
+        if (!key || seen.has(key)) return;
+        seen.add(key);
+        const v = snap.val();
+        if (!v || typeof v.text !== "string") return;
+        callbackRef.current({
+          id: key,
+          text: v.text,
+          userId: v.userId ?? "",
+          status: v.status ?? "approved",
+          createdAt: v.createdAt ?? 0,
+        });
       });
-    });
+    };
+
+    get(q)
+      .then((snap) => {
+        snap.forEach((child) => {
+          if (child.key) seen.add(child.key);
+        });
+      })
+      // 取得できなかった場合は既存分も流れてしまうが、無音になるよりはよい
+      .catch(() => {})
+      .finally(attach);
+
+    return () => {
+      cancelled = true;
+      detach?.();
+    };
   }, [sessionId, enabled]);
 }
 
