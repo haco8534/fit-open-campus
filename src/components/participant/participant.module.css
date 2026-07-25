@@ -1,168 +1,134 @@
+/*
+  参加者（スマホ）画面の共通スタイル。
+  会場で初めて開く高校生が迷わないことを優先し、装飾は最小限にする。
+  白いカード・細い枠線・角丸・単色アクセント、という一般的なWebアプリの見た目に揃える。
+*/
+
 .shell {
-  --accent: #ff5c35;
-  --accent-soft: #ffe3d7;
-  --ink: #15243c;
-  --paper: #f4f0e6;
-  --signal: #d8ff52;
+  --accent: #2563eb;
+  --accent-hover: #1d4ed8;
+  --accent-weak: #eff6ff;
+  --accent-border: #bfdbfe;
+  --border: #e5e7eb;
+  --text: #1f2937;
+  --muted: #6b7280;
   min-height: 100dvh;
-  color: var(--ink);
-  background:
-    radial-gradient(circle at 12px 12px, rgb(21 36 60 / 8%) 1.2px, transparent 1.4px)
-      0 0 / 24px 24px,
-    var(--paper);
-  isolation: isolate;
-}
-
-.shell[data-phase="talk"] {
-  --accent: #2878ff;
-  --accent-soft: #dce8ff;
-}
-
-.shell[data-phase="poll"] {
-  --accent: #e4387d;
-  --accent-soft: #ffe0ec;
-}
-
-.shell[data-phase="question"] {
-  --accent: #118f74;
-  --accent-soft: #d8f5eb;
-}
-
-.shell[data-phase="ending"] {
-  --accent: #ff8a1f;
-  --accent-soft: #ffe7c5;
+  color: var(--text);
+  background: #f4f5f7;
 }
 
 .canvas {
-  position: relative;
   min-height: 100dvh;
-  overflow: hidden;
-  background: rgb(244 240 230 / 94%);
+  background: #f4f5f7;
 }
 
-.canvas::before {
-  position: absolute;
-  inset: 0 0 auto;
-  z-index: -1;
-  height: 10px;
-  content: "";
-  background: repeating-linear-gradient(
-    90deg,
-    var(--accent) 0 30px,
-    var(--ink) 30px 44px,
-    var(--signal) 44px 62px
-  );
+.header {
+  background: #fff;
+  border-bottom: 1px solid var(--border);
 }
 
-.canvas::after {
-  position: absolute;
-  top: 76px;
-  right: -58px;
-  z-index: -1;
-  width: 150px;
-  height: 150px;
-  content: "";
-  border: 2px solid rgb(21 36 60 / 12%);
-  border-radius: 999px;
-  box-shadow:
-    0 0 0 16px rgb(21 36 60 / 3%),
-    0 0 0 32px rgb(21 36 60 / 3%);
-}
-
-.phaseCard {
-  position: relative;
-  overflow: hidden;
+.logo {
+  color: #fff;
   background: var(--accent);
-  border: 2px solid var(--ink);
-  border-radius: 18px 18px 6px 18px;
-  box-shadow: 5px 5px 0 var(--ink);
+  border-radius: 8px;
 }
 
-.phaseCard::after {
-  position: absolute;
-  right: -30px;
-  bottom: -46px;
-  width: 118px;
-  height: 118px;
-  content: "";
-  border: 20px solid rgb(255 255 255 / 18%);
+.statusChip {
+  color: var(--muted);
+  background: #f3f4f6;
   border-radius: 999px;
-}
-
-.phaseStamp {
-  transform: rotate(2deg);
-  background: var(--signal);
-  border: 2px solid var(--ink);
-  box-shadow: 3px 3px 0 var(--ink);
 }
 
 .contentCard {
-  background: #fffdf7;
-  border: 2px solid var(--ink);
-  border-radius: 18px 18px 8px 18px;
-  box-shadow: 5px 5px 0 var(--ink);
+  background: #fff;
+  border: 1px solid var(--border);
+  border-radius: 12px;
 }
 
 .softCard {
-  background: var(--accent-soft);
-  border: 2px solid var(--ink);
-  border-radius: 14px 14px 5px 14px;
+  background: var(--accent-weak);
+  border: 1px solid var(--accent-border);
+  border-radius: 10px;
 }
 
 .accentButton {
-  color: white;
+  color: #fff;
   background: var(--accent);
-  border: 2px solid var(--ink);
-  box-shadow: 3px 3px 0 var(--ink);
+  border: 1px solid transparent;
+  border-radius: 8px;
 }
 
 .accentButton:active:not(:disabled) {
-  transform: translate(2px, 2px);
-  box-shadow: 1px 1px 0 var(--ink);
+  background: var(--accent-hover);
 }
 
 .accentButton:disabled {
-  color: #727b89;
-  background: #d9d7d0;
-  box-shadow: none;
+  color: #f8fafc;
+  cursor: not-allowed;
+  background: #cbd5e1;
 }
 
 .field {
-  background: #fffdf7;
-  border: 2px solid var(--ink);
-  box-shadow: inset 0 -3px 0 rgb(21 36 60 / 6%);
+  color: var(--text);
+  background: #fff;
+  border: 1px solid #d1d5db;
+  border-radius: 8px;
+}
+
+.field::placeholder {
+  color: #9ca3af;
 }
 
 .field:focus {
   border-color: var(--accent);
-  outline: 3px solid color-mix(in srgb, var(--accent) 22%, transparent);
-  outline-offset: 2px;
+  outline: 2px solid rgb(37 99 235 / 25%);
+  outline-offset: 1px;
 }
 
-.sectionLabel {
-  display: inline-flex;
-  align-items: center;
-  min-height: 24px;
-  padding: 3px 9px;
-  color: white;
-  letter-spacing: 0.08em;
-  background: var(--ink);
-  border-radius: 999px;
+.field:disabled {
+  color: #9ca3af;
+  background: #f3f4f6;
 }
 
-.privacyStrip {
-  background:
-    linear-gradient(90deg, transparent 0 13px, rgb(21 36 60 / 10%) 13px 14px)
-      0 0 / 14px 100%,
-    #ebe5d8;
-  border-top: 2px solid var(--ink);
+/* リアクション・投票の選択肢に共通の「押せる箱」 */
+.choice {
+  background: #fff;
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  transition: background-color 0.12s ease;
 }
 
-@media (min-width: 520px) {
-  .canvas {
-    border-inline: 2px solid var(--ink);
-    box-shadow: 10px 0 0 rgb(21 36 60 / 8%);
-  }
+.choice:active:not(:disabled) {
+  background: #f3f4f6;
+}
+
+/*
+  投票終了後も選択肢は disabled になるが、結果を読ませたいので減光しない。
+  「受付停止中」を伝えたいリアクションボタンだけ choiceMuted を併用する。
+*/
+.choice:disabled {
+  cursor: default;
+}
+
+.choiceMuted:disabled {
+  background: #f9fafb;
+  opacity: 0.55;
+}
+
+.choiceSelected {
+  background: var(--accent-weak);
+  border-color: var(--accent);
+}
+
+/* 投票結果の帯 */
+.choiceBar {
+  background: rgb(37 99 235 / 12%);
+}
+
+.footer {
+  color: var(--muted);
+  background: #fff;
+  border-top: 1px solid var(--border);
 }
 
 @media (prefers-reduced-motion: reduce) {
