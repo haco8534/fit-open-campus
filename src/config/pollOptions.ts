@@ -10,6 +10,3 @@ export const POLL_OPTIONS: PollOption[] = [
   { id: "growth-common", label: "大学で成長している人の共通点" },
 ];
 
-export function getPollOption(id: string | null | undefined): PollOption | undefined {
-  return POLL_OPTIONS.find((o) => o.id === id);
-}

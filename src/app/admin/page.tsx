@@ -5,14 +5,10 @@ import {
   DEFAULT_SESSION_ID,
   blockUser,
   clearComments,
-  closePoll,
   deleteQuestion,
   featureQuestion,
   goToSlide,
-  openPoll,
-  resetPoll,
   setQuestionStatus,
-  setSelectedTheme,
   setSessionActive,
   updateState,
 } from "@/lib/session";
@@ -79,13 +75,10 @@ export default function AdminPage() {
   const move = useCallback(
     (slideId: number) => {
       withDb((db) =>
-        goToSlide(db, sessionId, slideId, {
-          currentSlide: state.currentSlide,
-          modeLocked: state.modeLocked,
-        })
+        goToSlide(db, sessionId, slideId, { currentSlide: state.currentSlide })
       );
     },
-    [withDb, sessionId, state.currentSlide, state.modeLocked]
+    [withDb, sessionId, state.currentSlide]
   );
 
   const handlePrev = useCallback(() => {
@@ -95,16 +88,6 @@ export default function AdminPage() {
   const handleNext = useCallback(() => {
     move(Math.min(LAST_SLIDE_ID, state.currentSlide + 1));
   }, [move, state.currentSlide]);
-
-  const handlePollToggle = useCallback(() => {
-    if (poll.status === "open") {
-      withDb((db) =>
-        closePoll(db, sessionId, poll.leaderId, state.currentSlide)
-      );
-    } else {
-      withDb((db) => openPoll(db, sessionId));
-    }
-  }, [withDb, sessionId, poll.status, poll.leaderId, state.currentSlide]);
 
   const handleToggleComments = useCallback(() => {
     withDb((db) =>
@@ -131,8 +114,8 @@ export default function AdminPage() {
       ) {
         return;
       }
-      // Ctrl+R（再読み込み）や Ctrl+P（印刷）でリアクション/投票が
-      // 誤って切り替わらないよう、修飾キー付きは無視する
+      // Ctrl+R（再読み込み）でリアクションが誤って切り替わらないよう、
+      // 修飾キー付きは無視する
       if (e.ctrlKey || e.metaKey || e.altKey || e.isComposing) return;
       // 矢印キーの長押しでスライドが飛ぶのを防ぐ
       if (e.repeat) return;
@@ -143,10 +126,6 @@ export default function AdminPage() {
           break;
         case "ArrowLeft":
           handlePrev();
-          break;
-        case "p":
-        case "P":
-          handlePollToggle();
           break;
         case "c":
         case "C":
@@ -177,7 +156,6 @@ export default function AdminPage() {
   }, [
     handleNext,
     handlePrev,
-    handlePollToggle,
     handleToggleComments,
     handleToggleReactions,
     withDb,
@@ -212,7 +190,7 @@ export default function AdminPage() {
               接続 {connectionCount} 人
             </span>
             <span className="hidden sm:inline">
-              ←→: スライド / P: 投票 / C: コメント / R: リアクション / Esc: 停止
+              ←→: スライド / C: コメント / R: リアクション / Esc: 停止
             </span>
           </div>
         </div>
@@ -235,24 +213,7 @@ export default function AdminPage() {
               onSelect={move}
             />
 
-            <PollController
-              poll={poll}
-              selectedTheme={state.selectedTheme}
-              onStart={() => withDb((db) => openPoll(db, sessionId))}
-              onEnd={() =>
-                withDb((db) =>
-                  closePoll(db, sessionId, poll.leaderId, state.currentSlide)
-                )
-              }
-              onReset={() => {
-                if (confirm("投票結果をリセットしますか？")) {
-                  withDb((db) => resetPoll(db, sessionId, state.currentSlide));
-                }
-              }}
-              onPickTheme={(themeId) =>
-                withDb((db) => setSelectedTheme(db, sessionId, themeId))
-              }
-            />
+            <PollController poll={poll} />
           </div>
 
           <div className="flex flex-col gap-4">

@@ -51,7 +51,9 @@ export function JoinQr({ joinUrl, qr }: Props) {
   const s = SIZE[qr?.size ?? "normal"];
 
   return (
-    <div className={`absolute ${POSITION_CLASS[position]}`}>
+    <div
+      className={`pointer-events-none absolute z-50 ${POSITION_CLASS[position]}`}
+    >
       <motion.div
         className="relative"
         animate={{ scale: [1, 1.04, 1] }}

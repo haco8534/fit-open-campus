@@ -3,7 +3,6 @@
 import { useEffect, useState } from "react";
 import { getSlide, slides } from "@/config/slides";
 import { DEFAULT_SESSION_ID } from "@/lib/session";
-import { getPollOption } from "@/config/pollOptions";
 import { useAnonymousAuth } from "@/hooks/useAnonymousAuth";
 import { useSessionState } from "@/hooks/useSessionState";
 import { usePoll } from "@/hooks/usePoll";
@@ -12,7 +11,7 @@ import { CommentLayer } from "@/components/display/CommentLayer";
 import { ReactionLayer } from "@/components/display/ReactionLayer";
 import { PollBoard } from "@/components/display/PollBoard";
 import { QuestionOverlay } from "@/components/display/QuestionOverlay";
-import { PersistentStatus } from "@/components/display/PersistentStatus";
+import { JoinQr } from "@/components/display/JoinQr";
 
 export default function DisplayPage() {
   const sessionId = DEFAULT_SESSION_ID;
@@ -48,19 +47,15 @@ export default function DisplayPage() {
     interactive && state.commentsEnabled && slide.showComments !== false;
   const showReactions =
     interactive && state.reactionsEnabled && slide.showReactions !== false;
-  // 投票画面を出す条件。参加者画面が投票モードなら、どのスライドで
-  // 「投票開始」を押してもスクリーン側が必ず追従する（以前はスライド7でしか出なかった）。
-  // 投票スライドを表示中も出しっぱなしにして、投票終了後の座談会中に
-  // 選ばれたテーマを掲示し続けられるようにする。
   const isPollScreen = state.mode === "poll" || slide.mode === "poll";
-  const themeLabel = getPollOption(state.selectedTheme)?.label ?? null;
+  const showQr = configured && slide.showQr !== false && state.sessionActive;
 
   return (
     <main className="flex h-screen w-screen items-center justify-center overflow-hidden bg-black">
       <div className="relative aspect-video max-h-screen w-full max-w-[177.78vh]">
         {/* 1-2. スライド画像・動画（投票スライドは専用画面に差し替え） */}
         {isPollScreen ? (
-          <PollBoard poll={poll} selectedTheme={state.selectedTheme} />
+          <PollBoard poll={poll} />
         ) : (
           <SlideRenderer slide={slide} />
         )}
@@ -74,16 +69,8 @@ export default function DisplayPage() {
         {/* 5. リアクション絵文字 */}
         {showReactions && <ReactionLayer sessionId={sessionId} />}
 
-        {/* 6. 常設UI */}
-        {configured && (
-          <PersistentStatus
-            joinUrl={joinUrl}
-            showQr={slide.showQr !== false && state.sessionActive}
-            qr={slide.qr}
-            // 投票画面は選ばれたテーマを自前で大きく出すので、ここでは重ねない
-            themeLabel={isPollScreen ? null : themeLabel}
-          />
-        )}
+        {/* 6. 参加用QR */}
+        {showQr && joinUrl && <JoinQr joinUrl={joinUrl} qr={slide.qr} />}
 
         {/* 7. 通信エラー表示 */}
         {configured && !connected && (

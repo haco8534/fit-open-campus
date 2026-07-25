@@ -20,19 +20,14 @@ export type FeaturedQuestion = {
 
 export type SessionState = {
   currentSlide: number;
-  /** 参加者画面のフェーズ。これが唯一の「いま何を出すか」の情報源 */
-  mode: SessionMode;
   /**
-   * 進行役が mode を手動で固定しているか。
-   * true のあいだはスライド送りで mode を上書きしない
-   * （質疑応答中に「次へ」を押して参加者の質問フォームが消える事故を防ぐ）。
+   * 参加者画面のフェーズ。常に表示中のスライドの mode と一致する
+   * （進行役が別途モードを切り替える操作は持たない）。
    */
-  modeLocked: boolean;
+  mode: SessionMode;
   commentsEnabled: boolean;
   reactionsEnabled: boolean;
   sessionActive: boolean;
-  /** 投票で選ばれたテーマの pollOption id */
-  selectedTheme: string | null;
   /** メインモニターに表示中の質問 */
   featuredQuestion: FeaturedQuestion | null;
   updatedAt: number;
@@ -41,11 +36,9 @@ export type SessionState = {
 export const DEFAULT_STATE: SessionState = {
   currentSlide: 1,
   mode: "reaction",
-  modeLocked: false,
   commentsEnabled: true,
   reactionsEnabled: true,
   sessionActive: true,
-  selectedTheme: null,
   featuredQuestion: null,
   updatedAt: 0,
 };
@@ -70,76 +63,33 @@ export async function updateState(
 }
 
 /**
- * スライド移動。mode が固定されていなければスライドの mode も反映する。
+ * スライド移動。参加者画面のモードもスライドに合わせて切り替える。
  *
- * - 同じスライドへの移動は書き込まない（端のスライドで「次へ」を連打すると
- *   currentSlide は変わらないのに mode だけ巻き戻る、という事故を防ぐ）
- * - modeLocked が true のときは currentSlide だけを動かす
+ * 投票スライドに入った瞬間が投票の開始タイミングであり、同時にリセットでもある
+ * （進行役が開始／終了を操作することはない。投票は締め切らず、
+ *   結果を見ながら話すあいだもずっと受け付け続ける）。
+ *
+ * 同じスライドへの移動は何も書き込まない。端のスライドで「次へ」を連打しても
+ * 票が消えないようにするため。
  */
 export async function goToSlide(
   db: Database,
   sessionId: string,
   slideId: number,
-  options: { currentSlide?: number; modeLocked?: boolean } = {}
+  options: { currentSlide?: number } = {}
 ): Promise<void> {
   const slide = getSlide(slideId);
   if (options.currentSlide === slide.id) return;
 
-  const patch: Partial<Omit<SessionState, "updatedAt">> = {
+  if (slide.mode === "poll") {
+    await remove(ref(db, sessionPath(sessionId, "poll", "voters")));
+    await set(ref(db, sessionPath(sessionId, "poll", "status")), "open");
+  }
+
+  await updateState(db, sessionId, {
     currentSlide: slide.id,
-  };
-  if (!options.modeLocked) patch.mode = slide.mode;
-  await updateState(db, sessionId, patch);
-}
-
-export async function openPoll(db: Database, sessionId: string): Promise<void> {
-  await set(ref(db, sessionPath(sessionId, "poll", "status")), "open");
-  // 投票中にスライドを動かしても投票画面が消えないよう mode を固定する
-  await updateState(db, sessionId, {
-    mode: "poll",
-    modeLocked: true,
-    selectedTheme: null,
+    mode: slide.mode,
   });
-}
-
-/**
- * 投票終了。winnerId が null の場合は同票などで進行役が選ぶ。
- * 投票中の mode 固定を解除し、表示中のスライドのモードに戻す。
- */
-export async function closePoll(
-  db: Database,
-  sessionId: string,
-  winnerId: string | null,
-  currentSlide: number
-): Promise<void> {
-  await set(ref(db, sessionPath(sessionId, "poll", "status")), "closed");
-  await updateState(db, sessionId, {
-    selectedTheme: winnerId,
-    modeLocked: false,
-    mode: getSlide(currentSlide).mode,
-  });
-}
-
-export async function resetPoll(
-  db: Database,
-  sessionId: string,
-  currentSlide: number
-): Promise<void> {
-  await remove(ref(db, sessionPath(sessionId, "poll", "voters")));
-  await set(ref(db, sessionPath(sessionId, "poll", "status")), "closed");
-  await updateState(db, sessionId, {
-    selectedTheme: null,
-    modeLocked: false,
-    mode: getSlide(currentSlide).mode,
-  });
-}
-
-export async function setSelectedTheme(
-  db: Database,
-  sessionId: string,
-  themeId: string | null
-): Promise<void> {
-  await updateState(db, sessionId, { selectedTheme: themeId });
 }
 
 export async function clearComments(

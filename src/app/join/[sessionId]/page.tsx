@@ -3,7 +3,6 @@
 import { useParams } from "next/navigation";
 import { motion, AnimatePresence } from "framer-motion";
 import { DEFAULT_SESSION_ID, type SessionMode } from "@/lib/session";
-import { getPollOption } from "@/config/pollOptions";
 import { useAnonymousAuth } from "@/hooks/useAnonymousAuth";
 import { useSessionState } from "@/hooks/useSessionState";
 import { usePresence, useConnectionCount } from "@/hooks/usePresence";
@@ -59,7 +58,6 @@ export default function JoinPage() {
   const sendReaction = useSendReaction(sessionId, uid);
   const sendQuestion = useSendQuestion(sessionId, uid);
 
-  const themeLabel = getPollOption(state.selectedTheme)?.label;
   const phase = PHASE[state.mode] ?? PHASE.reaction;
   const ready = configured && loaded && uid && state.sessionActive;
 
@@ -94,7 +92,7 @@ export default function JoinPage() {
 
     switch (state.mode) {
       case "poll":
-        return <PollPanel poll={poll} selectedTheme={state.selectedTheme} />;
+        return <PollPanel poll={poll} />;
 
       case "question":
         return (
@@ -131,14 +129,6 @@ export default function JoinPage() {
       default:
         return (
           <div className="flex flex-col gap-3">
-            {themeLabel && (
-              <div className={`${styles.softCard} p-3`}>
-                <p className="text-xs text-slate-500">いま話しているテーマ</p>
-                <p className="mt-1 text-sm font-semibold leading-snug">
-                  {themeLabel}
-                </p>
-              </div>
-            )}
             <ReactionPanel
               onSend={sendReaction}
               disabled={!state.reactionsEnabled}

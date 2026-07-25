@@ -1,44 +1,29 @@
 "use client";
 
 import type { PollResultData } from "@/hooks/usePoll";
-import { getPollOption } from "@/config/pollOptions";
 import styles from "./participant.module.css";
 
 type Props = {
   poll: PollResultData;
-  selectedTheme: string | null;
 };
 
-export function PollPanel({ poll, selectedTheme }: Props) {
-  const winner = getPollOption(selectedTheme);
-  const closed = poll.status === "closed";
-
+/**
+ * 参加者の投票画面。
+ * 投票は締め切らないので、いつでも選び直せる。
+ * 集計結果は会場スクリーンを見てもらうため、ここには出さない。
+ */
+export function PollPanel({ poll }: Props) {
   return (
-    <section
-      className={`${styles.contentCard} p-4`}
-      aria-labelledby="poll-title"
-    >
+    <section className={`${styles.contentCard} p-4`} aria-labelledby="poll-title">
       <div className="flex items-baseline justify-between gap-3">
         <h2 id="poll-title" className="text-sm font-semibold">
-          {closed
-            ? winner
-              ? "次のテーマが決まりました"
-              : "投票を締め切りました"
-            : "聞きたいテーマを選ぶ"}
+          聞きたいテーマを選ぶ
         </h2>
-        <span className="shrink-0 text-xs text-slate-500">
-          {closed ? `${poll.totalVotes}票` : "1人1票"}
-        </span>
+        <span className="shrink-0 text-xs text-slate-500">1人1票</span>
       </div>
-
-      {closed && winner && (
-        <div className={`${styles.softCard} mt-3 p-3`}>
-          <p className="text-xs text-slate-500">選ばれたテーマ</p>
-          <p className="mt-1 text-sm font-semibold leading-snug">
-            {winner.label}
-          </p>
-        </div>
-      )}
+      <p className="mt-1 text-xs text-slate-500">
+        結果は会場のスクリーンにリアルタイムで出ます
+      </p>
 
       <div
         className="mt-3 flex flex-col gap-2"
@@ -47,31 +32,19 @@ export function PollPanel({ poll, selectedTheme }: Props) {
       >
         {poll.tallies.map((t) => {
           const isMyVote = poll.myVote === t.id;
-          const percentage =
-            poll.totalVotes > 0
-              ? Math.round((t.votes / poll.totalVotes) * 100)
-              : 0;
 
           return (
             <button
               key={t.id}
               type="button"
               onClick={() => poll.vote(t.id)}
-              disabled={closed}
               role="radio"
               aria-checked={isMyVote}
               className={`${styles.choice} ${
                 isMyVote ? styles.choiceSelected : ""
-              } relative overflow-hidden p-3 text-left`}
+              } p-3 text-left`}
             >
-              {closed && (
-                <span
-                  className={`${styles.choiceBar} absolute inset-y-0 left-0`}
-                  style={{ width: `${percentage}%` }}
-                  aria-hidden="true"
-                />
-              )}
-              <div className="relative flex items-center gap-3">
+              <div className="flex items-center gap-3">
                 <span
                   className={`flex h-5 w-5 shrink-0 items-center justify-center rounded-full border ${
                     isMyVote
@@ -80,16 +53,9 @@ export function PollPanel({ poll, selectedTheme }: Props) {
                   }`}
                   aria-hidden="true"
                 >
-                  {isMyVote && (
-                    <span className="h-2 w-2 rounded-full bg-white" />
-                  )}
+                  {isMyVote && <span className="h-2 w-2 rounded-full bg-white" />}
                 </span>
                 <span className="flex-1 text-sm leading-snug">{t.label}</span>
-                {closed && (
-                  <span className="shrink-0 text-xs text-slate-500">
-                    {percentage}%
-                  </span>
-                )}
               </div>
             </button>
           );
@@ -97,11 +63,9 @@ export function PollPanel({ poll, selectedTheme }: Props) {
       </div>
 
       <p className="mt-3 text-center text-xs text-slate-500">
-        {closed
-          ? "投票ありがとうございました"
-          : poll.myVote
-            ? "締め切りまでは何度でも変更できます"
-            : "聞きたいテーマをタップしてください"}
+        {poll.myVote
+          ? "気が変わったら選び直してOK"
+          : "聞きたいテーマをタップしてください"}
       </p>
     </section>
   );
