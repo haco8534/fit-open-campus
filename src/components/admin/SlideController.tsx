@@ -54,14 +54,21 @@ export function SlideController({
             }`}
           >
             <div className="relative aspect-video w-full bg-slate-900">
-              <Image
-                src={s.image}
-                alt={s.title ?? `スライド ${s.id}`}
-                fill
-                unoptimized
-                className="object-contain"
-                onError={() => {}}
-              />
+              {s.image ? (
+                <Image
+                  src={s.image}
+                  alt={s.title ?? `スライド ${s.id}`}
+                  fill
+                  unoptimized
+                  className="object-contain"
+                  onError={() => {}}
+                />
+              ) : (
+                // 画像を持たない画面（待機・投票はアプリ側で描画する）
+                <span className="absolute inset-0 flex items-center justify-center text-[10px] font-bold text-slate-400">
+                  {s.mode.toUpperCase()}
+                </span>
+              )}
             </div>
             <div className="truncate px-1.5 py-1 text-[11px] text-slate-600">
               {s.id}. {s.title}

@@ -4,7 +4,17 @@
 // qr.position はスライド画像の余白を実際に見て決めている。
 // 画像を差し替えたら、QRが図版や文字に被っていないか /display で必ず確認すること。
 
-export type SlideMode = "reaction" | "poll" | "talk" | "question" | "ending";
+/**
+ * 参加者画面のフェーズ。表示中のスライドがそのまま参加者画面を決める。
+ * waiting は開始前の待機画面（参加者は何も送れない）。
+ */
+export type SlideMode =
+  | "waiting"
+  | "reaction"
+  | "poll"
+  | "talk"
+  | "question"
+  | "ending";
 
 export type SlideVideo = {
   src: string;
@@ -34,7 +44,8 @@ export type SlideQr = {
 
 export type SlideConfig = {
   id: number;
-  image: string;
+  /** スライド画像。waiting / poll のようにアプリ側で描画する画面は持たない */
+  image?: string;
   mode: SlideMode;
   title?: string;
   video?: SlideVideo;
@@ -47,7 +58,16 @@ export type SlideConfig = {
 
 export const slides: SlideConfig[] = [
   {
+    // 開始前の待機画面。画像ではなく WaitingBoard を描画する
     id: 1,
+    mode: "waiting",
+    title: "開始前（参加案内）",
+    showQr: false, // 画面中央に大きく出すので隅のQRは出さない
+    showComments: false,
+    showReactions: false,
+  },
+  {
+    id: 2,
     image: "/slides/1.png",
     mode: "reaction",
     title: "タイトル",
@@ -58,7 +78,7 @@ export const slides: SlideConfig[] = [
     showReactions: true,
   },
   {
-    id: 2,
+    id: 3,
     image: "/slides/2.png",
     mode: "reaction",
     title: "登壇者の自己紹介",
@@ -69,7 +89,7 @@ export const slides: SlideConfig[] = [
     showReactions: true,
   },
   {
-    id: 3,
+    id: 4,
     image: "/slides/3.png",
     mode: "reaction",
     title: "解決したい課題",
@@ -80,7 +100,7 @@ export const slides: SlideConfig[] = [
     showReactions: true,
   },
   {
-    id: 4,
+    id: 5,
     image: "/slides/4.png",
     mode: "reaction",
     title: "学習支援アプリ「ピークる」",
@@ -102,7 +122,7 @@ export const slides: SlideConfig[] = [
     // },
   },
   {
-    id: 5,
+    id: 6,
     image: "/slides/5.png",
     mode: "reaction",
     title: "ピークるとは？（BEFORE / AFTER）",
@@ -113,7 +133,7 @@ export const slides: SlideConfig[] = [
     showReactions: true,
   },
   {
-    id: 6,
+    id: 7,
     image: "/slides/6.png",
     mode: "reaction",
     title: "ハッカソンで得たもの",
@@ -124,7 +144,7 @@ export const slides: SlideConfig[] = [
     showReactions: true,
   },
   {
-    id: 7,
+    id: 8,
     image: "/slides/7.png",
     mode: "poll",
     title: "トークテーマ投票",
@@ -135,7 +155,7 @@ export const slides: SlideConfig[] = [
     showReactions: false,
   },
   {
-    id: 8,
+    id: 9,
     image: "/slides/8.png",
     mode: "ending",
     title: "エンディング・質問受付",

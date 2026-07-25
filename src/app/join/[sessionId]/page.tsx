@@ -23,6 +23,10 @@ type PhaseUI = {
 };
 
 const PHASE: Record<SessionMode, PhaseUI> = {
+  waiting: {
+    title: "参加できました",
+    hint: "セッションが始まるまでお待ちください",
+  },
   reaction: {
     title: "リアクションを送ろう",
     hint: "気になったところでボタンをタップしてください",
@@ -91,6 +95,15 @@ export default function JoinPage() {
     }
 
     switch (state.mode) {
+      // 開始前。コメントもリアクションも送れない
+      case "waiting":
+        return (
+          <WaitingScreen
+            title="まもなく始まります"
+            message="スクリーンを見ながらお待ちください。始まったらこの画面が自動で切り替わります"
+          />
+        );
+
       case "poll":
         return <PollPanel poll={poll} />;
 

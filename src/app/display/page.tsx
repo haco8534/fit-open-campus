@@ -10,6 +10,7 @@ import { SlideRenderer } from "@/components/slides/SlideRenderer";
 import { CommentLayer } from "@/components/display/CommentLayer";
 import { ReactionLayer } from "@/components/display/ReactionLayer";
 import { PollBoard } from "@/components/display/PollBoard";
+import { WaitingBoard } from "@/components/display/WaitingBoard";
 import { QuestionOverlay } from "@/components/display/QuestionOverlay";
 import { JoinQr } from "@/components/display/JoinQr";
 
@@ -24,9 +25,10 @@ export default function DisplayPage() {
   // 管理者画面と表示がずれるため、キーハンドラは持たない。
   const slide = getSlide(state.currentSlide);
 
-  // スライド画像の事前読み込み
+  // スライド画像の事前読み込み（画像を持たない画面はスキップ）
   useEffect(() => {
     slides.forEach((s) => {
+      if (!s.image) return;
       const img = new window.Image();
       img.src = s.image;
     });
@@ -48,13 +50,16 @@ export default function DisplayPage() {
   const showReactions =
     interactive && state.reactionsEnabled && slide.showReactions !== false;
   const isPollScreen = state.mode === "poll" || slide.mode === "poll";
+  const isWaitingScreen = slide.mode === "waiting";
   const showQr = configured && slide.showQr !== false && state.sessionActive;
 
   return (
     <main className="flex h-screen w-screen items-center justify-center overflow-hidden bg-black">
       <div className="relative aspect-video max-h-screen w-full max-w-[177.78vh]">
-        {/* 1-2. スライド画像・動画（投票スライドは専用画面に差し替え） */}
-        {isPollScreen ? (
+        {/* 1-2. スライド画像・動画（待機・投票は専用画面に差し替え） */}
+        {isWaitingScreen ? (
+          <WaitingBoard joinUrl={joinUrl} />
+        ) : isPollScreen ? (
           <PollBoard poll={poll} />
         ) : (
           <SlideRenderer slide={slide} />
